@@ -1,6 +1,11 @@
 sc_spdif Change Log
 ===================
 
+2.0.0
+-----
+
+  * Restructuring
+
 1.3.2
 -----
 
