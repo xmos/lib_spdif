@@ -31,7 +31,7 @@ void spdif_rx(streaming chanend c, in port p_spdif, clock clk, unsigned sample_f
  *  "select handler" so can be used within a select e.g.
  *
     \verbatim
-     uint32_t sample;
+     int32_t sample;
      size_t index;
      select {
        case spdif_receive_sample(c, sample, index):
