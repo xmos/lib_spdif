@@ -1,4 +1,11 @@
 S/PDIF library
+==============
+
+.. rheader::
+
+   SPDIF |version|
+
+S/PDIF library
 -------------
 
 A software defined, industry-standard, S/PDIF library
@@ -17,4 +24,3 @@ Components
 
  * S/PDIF receiver
  * S/PDIF transmitter
-
