@@ -6,7 +6,7 @@ S/PDIF library
    SPDIF |version|
 
 S/PDIF library
--------------
+--------------
 
 A software defined, industry-standard, S/PDIF library
 that allows you to trasnmit or receive S/PDIF data via xCORE ports.
