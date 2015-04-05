@@ -224,3 +224,14 @@ S/PDIF transmitter API
 
 .. doxygenfunction:: spdif_tx_reconfigure_sample_rate
 .. doxygenfunction:: spdif_tx_output
+
+
+|appendix|
+
+Known Issues
+------------
+
+No known issues.
+
+
+.. include:: ../../../CHANGELOG.rst
