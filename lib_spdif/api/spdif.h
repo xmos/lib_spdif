@@ -2,12 +2,13 @@
 #define SPDIF_H_
 #include <stdint.h>
 #include <stddef.h>
+#include <xs1.h>
 
 /** S/PDIF receive function.
  *
  * This function provides an S/PDIF receiver component.
  * It is capable of 11025, 12000, 22050, 24000,
- * 44100, 48000, 88200, 96000, and 192000 Hz sample rates.
+ * 44100, 48000, 88200 and 96000 Hz sample rates.
  * When the decoder
  * encounters a long series of zeros it will lower its inernal divider; when it
  * encounters a short series of 0-1 transitions it will increase its internal

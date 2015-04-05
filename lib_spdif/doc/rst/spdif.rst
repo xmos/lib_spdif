@@ -1,54 +1,65 @@
 .. include:: ../../../README.rst
 
-Resource Usage
-..............
+External signal description
+---------------------------
 
-.. list-table::
-   :header-rows: 1
-   :class: wide vertical-borders horizontal-borders
+The library implements the S/PDIF (Sony/Philips Digital Interface
+Format) protocol for carrying uncompressed 24-bit stereo PCM data.
 
-   * - Component
-     - Pins
-     - Ports
-     - Clock Blocks
-     - Ram
-     - Logical cores
-   * - Transmitter
-     - 1
-     - 1 x (1-bit)
-     - 1
-     - ~0.7K
-     - 1
-   * - Receiver
-     - 1
-     - 1 x (1-bit)
-     - 1
-     - ~0.7K
-     - 1
+The precise transmission frequencies supported depend on the availability
+of an external clock (eg, a PLL or a crystal oscillator) that runs at a
+frequency of *channels* * *sampleRate* * *64* or a power-of-2
+multiple. For example, for 2 channels at 192 Khz the
+external clock has to run at a frequency of 24.576 MHz. This same frequency
+also supports 2 channels at 48 KHz (which requires a minimum frequency of
+6.144 MHz). If both 44,1 and 48 Khz frequencies are to be supported, both a
+24.576 MHz and a 22.579 MHz master clock is required.
 
-Software version and dependencies
-.................................
+The receiver can receive stereo PCM signals up to 96 Khz.
 
-This document pertains to version |version| of the S/PDIF library. It is
-intended to be used with version 13.x of the xTIMEcomposer studio tools.
+Connecting to the xCORE as transmitter
+......................................
 
-The library does not have any dependencies (i.e. it does not rely on any
-other libraries).
+The connection of an S/PDIF transmit line to the xCORE is shown in
+:ref:`spdif_connect_tx`.
 
-Related application notes
-.........................
+.. _spdif_connect_tx:
 
-The following application notes use this library:
+.. figure:: images/spdif_tx_connect.*
+   :width: 60%
 
-  * AN00052 - How to use the S/PDIF component
+   Connecting S/PDIF transmit
 
-Hardware characteristics
-------------------------
+The outgoing signal should be resynchronized to the external clock
+using a D-type flip-flop. The incoming clock signal is used to drive
+an internal clock and can be shared with other software functions
+using the clock (e.g. S/PDIF receive or I2S).
 
-TODO
+For the best jitter tolerances on output it is recommended that a 500
+Mhz part is used.
 
-API
----
+
+Connecting to the xCORE as receiver
+...................................
+
+
+The connection of an S/PDIF receiver line to the xCORE is shown in
+:ref:`spdif_connect_rx`.
+
+.. _spdif_connect_rx:
+
+.. figure:: images/spdif_rx_connect.*
+   :width: 45%
+
+   Connecting S/PDIF receiver
+
+Only a single wire is connected. The clock is recovered from the
+incoming data signal.
+
+|newpage|
+
+Usage
+-----
 
 All S/PDIF functions can be accessed via the ``spdif.h`` header::
 
@@ -57,15 +68,22 @@ All S/PDIF functions can be accessed via the ``spdif.h`` header::
 You will also have to add ``lib_spdif`` to the
 ``USED_MODULES`` field of your application Makefile.
 
+S/PDIF transmitter
+..................
+
 S/PDIF components are instantiated as parallel tasks that run in a
 ``par`` statement. The application can connect via a channel
 connection.
 
-TODO DIAGRAM!!!
+.. _spdif_tx_task_diag:
+
+.. figure:: images/spdif_tx_task_diag.*
+   :width: 60%
+
+   S/PDIF transmit task diagram
 
 For example, the following code instantiates an S/PDIF transmitter component
 and connects to it::
-     
 
   out port p_spdif_tx   = XS1_PORT_1K;
   in port p_mclk_in     = XS1_PORT_1L;
@@ -73,12 +91,15 @@ and connects to it::
 
   int main(void) {
     chanend c_spdif;
-    configure_clock_src(clk_audio, p_mclk_in);
-    spdif_tx_set_clock_delay(clk_audio);
-    start_clock(clk_audio);
     par {
-      spdif_tx(c_spdif, p_spdif_tx, clk_audio);
-      my_application(c_spdif);
+      on tile[0]: {
+         configure_clock_src(clk_audio, p_mclk_in);
+         spdif_tx_set_clock_delay(clk_audio);
+         start_clock(clk_audio);
+         spdif_tx(c_spdif, p_spdif_tx, clk_audio);
+        }
+
+      on tile[0]: my_application(c_spdif);
     }
     return 0;
   }
@@ -95,7 +116,86 @@ that take the channel end as arguments e.g.::
     }
   }
 
+S/PDIF receiver
+...............
+
+
+S/PDIF components are instantiated as parallel tasks that run in a
+``par`` statement. The application can connect via a channel
+connection.
+
+.. _spdif_rx_task_diag:
+
+.. figure:: images/spdif_rx_task_diag.*
+   :width: 60%
+
+   S/PDIF receiver task diagram
+
+For example, the following code instantiates an S/PDIF transmitter component
+and connects to it::
+
+  port p_spdif_rx  = XS1_PORT_1F;
+  clock audio_clk  = XS1_CLKBLK_1;
+
+  int main(void) {
+      streaming chan c;
+      par {
+        spdif_rx(c, p_spdif_rx, audio_clk, 192000);
+        handle_samples(c);
+      }
+      return 0;
+  }
+
+The application can communicate with the components via API functions
+that take the channel end as arguments e.g.::
+
+ void my_application(streaming chanend c)
+ {
+  int32_t sample;
+  size_t index;
+  size_t left_count, right_count;
+  while(1) {
+    select {
+    case spdif_receive_sample(c, sample, index):
+      // sample contains the 24bit data
+      // You can process the audio data here
+      if (index == 0)
+        left_count++;
+      else
+        right_count++;
+      break;
+    }
+    ...
+
+Note that your program can react to incoming samples using a
+``select`` statement. More information on using ``par`` and ``select``
+statements can be found in the :ref:`XMOS Programming Guide<programming_guide>`.
+
+Configuring the underlying clock
+................................
+
+When using the transmit component, the internal clock needs to be
+configured to run of the incoming signal e.g.::
+
+    configure_clock_src(clk_audio, p_mclk_in);
+    spdif_tx_set_clock_delay(clk_audio);
+    start_clock(clk_audio);
+
+These functions needs to be called before the ``spdif_tx`` function in
+the programs ``par`` statement.
+
+The ``configure_clock_src`` will configure a clock to run off an
+incoming port (see the XMOS tools user guide for more
+information). The ``spdif_tx_set_clock_delay`` function configures an
+internal delay from the incoming clock signal to the internal
+clock. This will enable the correct alignment of outgoing data with
+the clock. Other components such as I2S can stillbe used with the same
+clock after setting this delay.
+
 |newpage|
+
+API
+---
 
 Creating an S/PDIF receiver instance
 ....................................
@@ -115,7 +215,6 @@ Creating an S/PDIF transmitter instance
 .......................................
 
 .. doxygenfunction:: spdif_tx_set_clock_delay
-
 .. doxygenfunction:: spdif_tx
 
 |newpage|

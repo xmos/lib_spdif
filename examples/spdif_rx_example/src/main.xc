@@ -40,7 +40,7 @@ void handle_samples(streaming chanend c)
 int main(void) {
     streaming chan c;
     par {
-      spdif_rx(c, p_spdif_rx, audio_clk, 192000);
+      spdif_rx(c, p_spdif_rx, audio_clk, 48000);
       handle_samples(c);
     }
     return 0;
