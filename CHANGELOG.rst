@@ -1,6 +1,11 @@
 SPDIF library change log
 ========================
 
+2.0.2
+-----
+
+  * Fixed exception when running on xCORE-200 targets
+
 2.0.1
 -----
 

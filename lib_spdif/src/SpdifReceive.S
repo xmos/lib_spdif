@@ -100,10 +100,17 @@ parseSpDifE:
     //   );
 
 SpdifReceive:
+.align 4
+    //This entry point is designed to be dual and single issue friendly.
+    //The asm is all single issue, but may be called from single or dual issue caller
+    //By ensuring that the ENTSP0 is in lane 1 of a 32b bundle, entering from dual issue mode will
+    //cause a correct transition to single issue mode as SETCI and ENTSP are dual issued.
+    //The ENTSP0 is benign when entering from single issue mode and will be exectued after SETCI
+    SETCI r3, 7 # Instruction @0  //(resource lane, lane 0) XS1_SETC_RUNR_STOP
+    ENTSP 0     # Instruction @2  //(memory lane, lane 1)
     //LDC     r4, 0xf
     //AND     r4, r3, r4
     //BRFT    r4, parseSpDifc
-    SETCI   r3, 7   // XS1_SETC_RUNR_STOP
     SETD    r3, r2
     SETCLK  r0, r3
     SETCI   r3, 15  // XS1_SETC_RUNR_START
