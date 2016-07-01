@@ -103,7 +103,9 @@ SpdifReceive:
     //LDC     r4, 0xf
     //AND     r4, r3, r4
     //BRFT    r4, parseSpDifc
-    SETCI   r3, 7   // XS1_SETC_RUNR_STOP
+.align 4
+    SETCI r3, 7 # Instruction @0  //(resource lane, lane 0) XS1_SETC_RUNR_STOP
+    ENTSP 0     # Instruction @2  //(memory lane, lane 1)
     SETD    r3, r2
     SETCLK  r0, r3
     SETCI   r3, 15  // XS1_SETC_RUNR_START
