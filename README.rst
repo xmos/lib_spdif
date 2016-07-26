@@ -13,8 +13,8 @@ provides both a S/PDIF receiver and transmitter.
 Features
 ........
 
- * Supports stereo S/PDIF up to sample rates up to 9600Khz
- * Supports receiving and transmitting
+ * Supports stereo S/PDIF receive up to sample rates up to 96KHz
+ * Supports stereo S/PDIF transmit up to 192KHz
 
 Typical Resource Usage
 ......................
@@ -46,4 +46,4 @@ Related application notes
 
 The following application notes use this library:
 
-  * AN00178 - How to use the S/PDIF library
+  * AN00231 - SPDIF Receive to I2S output using Asynchronous Sample Rate Conversion
