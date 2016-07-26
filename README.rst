@@ -13,8 +13,8 @@ provides both a S/PDIF receiver and transmitter.
 Features
 ........
 
- * Supports stereo S/PDIF up to sample rates up to 96000Khz
- * Supports receiving and transmitting
+ * Supports stereo S/PDIF receive up to sample rates up to 96KHz
+ * Supports stereo S/PDIF transmit up to 192KHz
 
 Typical Resource Usage
 ......................
