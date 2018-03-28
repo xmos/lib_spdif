@@ -10,11 +10,29 @@
  */
 
 #include <xs1.h>
-#include <xclib.h>
 #include <print.h>
-#include <spdif.h>
+#include <xclib.h>
+#include "assert.h"
+#include "spdif.h"
 
 #define	VALIDITY 		0x00000000		/* Validity bit (x<<28) */
+
+void spdif_tx_port_config(out buffered port:32 p, clock clk, in port p_mclk, unsigned delay)
+{
+    assert(delay < 512);
+
+    /* Clock clock block from master-clock */
+    configure_clock_src(clk, p_mclk);
+
+    /* Clock S/PDIF tx port from MClk */
+    configure_out_port_no_ready(p, clk, 0);
+
+    /* Set delay to align SPDIF output to the clock at the external flop */
+    set_clock_fall_delay(clk, delay);
+
+    /* Start the clockblock ticking */
+    start_clock(clk);
+}
 
 /* Returns parity for a given word */
 static int inline parity32(unsigned x)
@@ -755,7 +773,7 @@ void SpdifTransmitError(chanend c_in)
 
 
 /* S/PDIF transmit thread */
-void SpdifTransmit(buffered out port:32 p, chanend c_in)
+void spdif_tx(buffered out port:32 p, chanend c_in)
 {
   chkct(c_in, XS1_CT_END);
   while (1) {
@@ -838,13 +856,13 @@ void SpdifTransmit(buffered out port:32 p, chanend c_in)
   }
 }
 
-void spdif_tx(chanend c, out port p_spdif, const clock mclk) {
-  out port * movable pp = &p_spdif;
-  out buffered port:32 * movable pbuf = reconfigure_port(move(pp),
-                                                         out buffered port:32);
+void spdif_tx_reconfig_port(chanend c, out port p_spdif, const clock mclk) 
+{
+    out port * movable pp = &p_spdif;
+    out buffered port:32 * movable pbuf = reconfigure_port(move(pp), out buffered port:32);
     /* Clock S/PDIF tx port from MClk */
-  configure_out_port_no_ready(*pbuf, mclk, 0);
-  SpdifTransmit(*pbuf, c);
+    configure_out_port_no_ready(*pbuf, mclk, 0);
+    spdif_tx(*pbuf, c);
 }
 
 void spdif_tx_output(chanend c, int32_t l, int32_t r)
@@ -862,9 +880,3 @@ void spdif_tx_reconfigure_sample_rate(chanend c,
   outuint(c, master_clock_frequency);
 }
 
-
-void spdif_tx_set_clock_delay(clock clk)
-{
-  /* Set delay to align SPDIF output to the clock at the external flop */
-  set_clock_fall_delay(clk, 7);
-}

@@ -24,7 +24,6 @@
  * \param sample_freq_estimate The initial expected sample rate (in Hz).
  *
  **/
-
 void spdif_rx(streaming chanend c, in port p_spdif, clock clk, unsigned sample_freq_estimate);
 
 /** Receive a sample from the S/PDIF component.
@@ -54,18 +53,25 @@ void spdif_rx(streaming chanend c, in port p_spdif, clock clk, unsigned sample_f
 #pragma select handler
 void spdif_receive_sample(streaming chanend c, int32_t &sample, size_t &index);
 
-
-/** Set the delay of a clock to enable correct timing of S/PDIF transmit.
+/** S/PDIF transmit configure port function 
+ * 
+ * This function configures a port to be used by the SPDIF transmit 
+ * function.
  *
- *  This function needs to be called for the clock that is to be passed into
- *  the S/PDIF transmitter component. It sets the clock such that output data
- *  is slightly delayed. This will work if I2S is clocked of the same clock
- *  but ensures S/PDIF functions correctly.
- *
- *  \param clk   the clock that the S/PDIF component will use.
+ * This function takes a delay for the clock that is to be passed into
+ * the S/PDIF transmitter component. It sets the clock such that output data
+ * is slightly delayed. This will work if I2S is clocked off the same clock
+ * but ensures S/PDIF functions correctly.
+ * 
+ * \param p     the port that the S/PDIF component will use
+ * \param clk   the clock that the S/PDIF component will use
+ * \param p_clk The clock connected to the master clock frequency.
+ *              Usually this should be configured to be driven by
+ *              an incoming master system clock.
+ * \param delay delay to uses to sync the SPDIF signal at the external 
+ *              flip-flop
  */
-void spdif_tx_set_clock_delay(clock clk);
-
+void spdif_tx_port_config(out buffered port:32 p, clock clk, in port p_mclk, unsigned delay);
 
 /** S/PDIF transmit function.
  *
@@ -78,13 +84,10 @@ void spdif_tx_set_clock_delay(clock clk);
  * should be to reconfigure the sample rate (using the
  * spdif_tx_reconfigure_sample_rate() function).
  *
- * \param c        chanend to connect to the application
  * \param p_spdif  The output port to transmit to
- * \param mclk     The clock connected to the master clock frequency.
- *                 Usually this should be configured to be driven by
- *                 an incoming master system clock.
+ * \param c        chanend to connect to the application
  */
-void spdif_tx(chanend c, out port p_spdif, const clock mclk);
+void spdif_tx(buffered out port:32 p_spdif, chanend c);
 
 /** Reconfigure the S/PDIF tx component to a new sample rate.
  *
@@ -110,7 +113,5 @@ void spdif_tx_reconfigure_sample_rate(chanend c_spdif_tx,
  * \param rsample       right sample to transmit
  */
 void spdif_tx_output(chanend c_spdif_tx, int32_t lsample, int32_t rsample);
-
-
 
 #endif /* SPDIF_H_ */

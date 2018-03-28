@@ -2,11 +2,11 @@
 
 #include <xs1.h>
 #include <platform.h>
-#include <spdif.h>
-#include <gpio.h>
-#include <xassert.h>
+#include "spdif.h"
+#include "gpio.h"
+#include "xassert.h"
 
-on tile[0] : out port p_spdif_tx   = XS1_PORT_1B;
+on tile[0] : buffered out port:32 p_spdif_tx   = XS1_PORT_1B;
 on tile[0] : in port p_mclk_in     = XS1_PORT_1E;
 on tile[0] : clock clk_audio       = XS1_CLKBLK_1;
 
@@ -60,10 +60,11 @@ void audio_tasks(client output_gpio_if gpio[2]) {
    gpio[0].output(1);
    gpio[1].output(1);
    configure_clock_src(clk_audio, p_mclk_in);
-   spdif_tx_set_clock_delay(clk_audio);
+   set_clock_fall_delay(clk_audio, 7);
    start_clock(clk_audio);
-   par {
-      spdif_tx(c, p_spdif_tx, clk_audio);
+   par 
+   {
+      spdif_tx(p_spdif_tx, c);
       generate_samples(c);
    }
 }

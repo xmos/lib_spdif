@@ -1,4 +1,4 @@
 # The files in this module needs to be built at -O2
 MODULE_XCC_FLAGS = $(XCC_FLAGS) -O3 -g
 
-VERSION = 2.0.2
+VERSION = 3.0.0
