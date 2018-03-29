@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2016, XMOS Ltd, All rights reserved
+// Copyright (c) 2014-2018, XMOS Ltd, All rights reserved
 #ifndef SPDIF_H_
 #define SPDIF_H_
 #include <stdint.h>
