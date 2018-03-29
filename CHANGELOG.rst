@@ -4,8 +4,9 @@ SPDIF library change log
 3.0.0
 -----
 
-  * spdif_tx() no longer configures port. Additional function spdif_tx_port_config()
-    provided. Allows sharing of clockblock with other tasks
+  * spdif_tx() no longer configures port. Additional function
+    spdif_tx_port_config() provided. Allows sharing of clockblock with other
+    tasks
 
 2.0.2
 -----
