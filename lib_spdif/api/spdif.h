@@ -5,6 +5,23 @@
 #include <stddef.h>
 #include <xs1.h>
 
+/** This constant defines the four least-significant bits of the first
+ * sample of a frame (typically a sample from the left channel)
+ */
+#define SPDIF_FRAME_X 9
+
+/** This constant defines the four least-significant bits of the second or
+ * later sample of a frame (typically a sample from the right channel,
+ * unless there are more than two channels)
+ */
+#define SPDIF_FRAME_Y 5
+
+/** This constant defines the four least-significant bits of the first
+ * sample of the first frame of a block (typically a sample from the left
+ * channel)
+ */
+#define SPDIF_FRAME_Z 3
+
 /** S/PDIF receive function.
  *
  * This function provides an S/PDIF receiver component.

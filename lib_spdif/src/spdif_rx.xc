@@ -3,22 +3,9 @@
 #include <stdint.h>
 #include <stddef.h>
 
-/** This constant defines the four least-significant bits of the first
- * sample of a frame (typically a sample from the left channel)
- */
-#define FRAME_X 9
+#include "spdif.h"
 
-/** This constant defines the four least-significant bits of the second or
- * later sample of a frame (typically a sample from the right channel,
- * unless there are more than two channels)
- */
-#define FRAME_Y 5
 
-/** This constant defines the four least-significant bits of the first
- * sample of the first frame of a block (typically a sample from the left
- * channel)
- */
-#define FRAME_Z 3
 
 void SpdifReceive(in buffered port:4 p, streaming chanend c, int initial_divider, clock clk);
 
@@ -44,6 +31,6 @@ void spdif_receive_sample(streaming chanend c, int32_t &sample, size_t &index)
 {
   uint32_t v;
   c :> v;
-  index = (v & 0xF) == FRAME_Y ? 1 : 0;
+  index = (v & 0xF) == SPDIF_FRAME_Y ? 1 : 0;
   sample = (v & ~0xF) << 4;
 }
