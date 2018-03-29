@@ -63,13 +63,13 @@ void spdif_receive_sample(streaming chanend c, int32_t &sample, size_t &index);
  * is slightly delayed. This will work if I2S is clocked off the same clock
  * but ensures S/PDIF functions correctly.
  * 
- * \param p     the port that the S/PDIF component will use
- * \param clk   the clock that the S/PDIF component will use
- * \param p_clk The clock connected to the master clock frequency.
- *              Usually this should be configured to be driven by
- *              an incoming master system clock.
- * \param delay delay to uses to sync the SPDIF signal at the external 
- *              flip-flop
+ * \param p       the port that the S/PDIF component will use
+ * \param clk     the clock that the S/PDIF component will use
+ * \param p_mclk  The clock connected to the master clock frequency.
+ *                Usually this should be configured to be driven by
+ *                an incoming master system clock.
+ * \param delay   delay to uses to sync the SPDIF signal at the external 
+ *                flip-flop
  */
 void spdif_tx_port_config(out buffered port:32 p, clock clk, in port p_mclk, unsigned delay);
 

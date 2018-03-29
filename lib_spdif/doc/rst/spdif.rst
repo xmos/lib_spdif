@@ -85,7 +85,7 @@ connection.
 For example, the following code instantiates an S/PDIF transmitter component
 and connects to it::
 
-  out port p_spdif_tx   = XS1_PORT_1K;
+  buffered out port:32 p_spdif_tx   = XS1_PORT_1K;
   in port p_mclk_in     = XS1_PORT_1L;
   clock clk_audio       = XS1_CLKBLK_1;
 
@@ -93,10 +93,8 @@ and connects to it::
     chanend c_spdif;
     par {
       on tile[0]: {
-         configure_clock_src(clk_audio, p_mclk_in);
-         spdif_tx_set_clock_delay(clk_audio);
-         start_clock(clk_audio);
-         spdif_tx(c_spdif, p_spdif_tx, clk_audio);
+         spdif_tx_port_config(p_spdif_tx, clk_audio, p_mclk_in, 7);
+         spdif_tx(p_spdif_tx, c_spdif);
         }
 
       on tile[0]: my_application(c_spdif);
@@ -177,20 +175,23 @@ Configuring the underlying clock
 When using the transmit component, the internal clock needs to be
 configured to run of the incoming signal e.g.::
 
-    configure_clock_src(clk_audio, p_mclk_in);
-    spdif_tx_set_clock_delay(clk_audio);
-    start_clock(clk_audio);
+    spdif_tx_port_config(p_spdif_tx, clk_audio, p_mclk_in, 7);
 
-These functions needs to be called before the ``spdif_tx`` function in
+This function needs to be called before the ``spdif_tx`` function in
 the programs ``par`` statement.
 
-The ``configure_clock_src`` will configure a clock to run off an
+
+In this function the ``configure_clock_src`` will configure a clock to run off an
 incoming port (see the XMOS tools user guide for more
-information). The ``spdif_tx_set_clock_delay`` function configures an
+information). The ``set_clock_fall_delay`` function configures an
 internal delay from the incoming clock signal to the internal
 clock. This will enable the correct alignment of outgoing data with
-the clock. Other components such as I2S can stillbe used with the same
+the clock. Other components such as I2S can still be used with the same
 clock after setting this delay.
+
+Note, the delay value shown above is a typical example and may need to be 
+tuned for the specific hardware being used.
+
 
 |newpage|
 
@@ -214,7 +215,7 @@ S/PDIF receiver API
 Creating an S/PDIF transmitter instance
 .......................................
 
-.. doxygenfunction:: spdif_tx_set_clock_delay
+.. doxygenfunction:: spdif_tx_port_config
 .. doxygenfunction:: spdif_tx
 
 |newpage|

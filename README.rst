@@ -22,9 +22,9 @@ Typical Resource Usage
 .. resusage::
 
   * - configuration: Transmit
-    - globals: out port p_spdif_tx   = XS1_PORT_1B; in port p_mclk_in = XS1_PORT_1E; clock clk_audio       = XS1_CLKBLK_1;
+    - globals: buffered out port:32 p_spdif_tx   = XS1_PORT_1B; in port p_mclk_in = XS1_PORT_1E; clock clk_audio       = XS1_CLKBLK_1;
     - locals: chan c;
-    - fn:  spdif_tx(c, p_spdif_tx, clk_audio);
+    - fn:  spdif_tx(p_spdif_tx, c);
     - pins: 1
     - ports: 1 (1-bit)
     - cores: 1
