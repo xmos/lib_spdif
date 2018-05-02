@@ -209,6 +209,7 @@ S/PDIF receiver API
 ...................
 
 .. doxygenfunction:: spdif_receive_sample
+.. doxygenfunction:: spdif_receive_shutdown
 
 |newpage|
 
