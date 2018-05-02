@@ -34,3 +34,7 @@ void spdif_receive_sample(streaming chanend c, int32_t &sample, size_t &index)
   index = (v & 0xF) == SPDIF_FRAME_Y ? 1 : 0;
   sample = (v & ~0xF) << 4;
 }
+
+void spdif_receive_shutdown(streaming chanend c){
+  soutct (c, XS1_CT_END);
+}
