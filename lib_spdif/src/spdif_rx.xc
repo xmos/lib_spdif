@@ -25,6 +25,9 @@ void spdif_rx(streaming chanend c, in port p, clock clk,
     initial_divider = 4;
   }
   SpdifReceive(*pbuf, c, initial_divider, clk);
+  
+  // Set pointers and ownership back to original state if SpdifReceive() exits
+  pp = reconfigure_port(move(pbuf), in port); 
 }
 
 void spdif_receive_sample(streaming chanend c, int32_t &sample, size_t &index)
