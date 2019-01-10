@@ -1,6 +1,11 @@
 SPDIF library change log
 ========================
 
+3.1.0
+-----
+
+  * Add library wscript to enable applications built using xwaf
+
 3.0.0
 -----
 

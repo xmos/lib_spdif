@@ -1,4 +1,6 @@
 # The files in this module needs to be built at -O2
-MODULE_XCC_FLAGS = $(XCC_FLAGS) -O3 -g
+MODULE_XCC_FLAGS = $(XCC_FLAGS) -O3
 
-VERSION = 3.0.0
+INCLUDE_DIRS = api src
+
+VERSION = 3.1.0
