@@ -39,8 +39,8 @@ pipeline {
         dir("${REPO}") {
           // Cannot call xcoreAllAppsBuild('examples') as examples are not prefixed 'app_'
           dir('examples') {
-            xCoreCompile('spdif_rx_example')
-            xCoreCompile('spdif_tx_example')
+            xcoreCompile('spdif_rx_example')
+            xcoreCompile('spdif_tx_example')
           }
           dir("${REPO}") {
             runXdoc('doc')
