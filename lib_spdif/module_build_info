@@ -2,7 +2,6 @@ VERSION = 4.0.0
 
 DEPENDENT_MODULES =
 
-# The files in this module needs to be built at -O2
 MODULE_XCC_FLAGS = $(XCC_FLAGS) \
                    -O3
 
