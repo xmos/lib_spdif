@@ -1,12 +1,14 @@
-@Library('xmos_jenkins_shared_library@master') _
+@Library('xmos_jenkins_shared_library@develop') _
+
 getApproval()
+
 pipeline {
   agent {
-    label 'x86&&macOS&&Apps'
+    label 'x86_64&&brew'
   }
   environment {
-    VIEW = 'spdif'
     REPO = 'lib_spdif'
+    VIEW = "${env.JOB_NAME.contains('PR-') ? REPO+'_'+env.CHANGE_TARGET : REPO+'_'+env.BRANCH_NAME}"
   }
   options {
     skipDefaultCheckout()
@@ -14,7 +16,7 @@ pipeline {
   stages {
     stage('Get view') {
       steps {
-        prepareAppsSandbox("${VIEW}", "${REPO}")
+        xcorePrepareSandbox("${VIEW}", "${REPO}")
       }
     }
     stage('Library checks') {
@@ -24,14 +26,10 @@ pipeline {
     }
     // stage('Generate') {
     //   steps {
-    //     dir("${REPO}") {
-    //       dir('support') {
-    //         dir('rx_generator') {
-    //           sh './generateCSV.sh'
-    //           sh './generateSpdif'
-    //           // TODO: ensure that lib_spdif/src/SpdifReceive.S has not changed
-    //         }
-    //       }
+    //     dir("${REPO}/support/rx_generator") {
+    //       sh './generateCSV.sh'
+    //       sh './generateSpdif'
+    //       // TODO: ensure that lib_spdif/src/SpdifReceive.S has not changed
     //     }
     //   }
     // }
