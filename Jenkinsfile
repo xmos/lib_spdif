@@ -81,7 +81,7 @@ pipeline {
       updateViewfiles()
     }
     cleanup {
-      cleanWs()
+      xcoreCleanSandbox()
     }
   }
 }
