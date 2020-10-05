@@ -1,6 +1,11 @@
 SPDIF library change log
 ========================
 
+4.0.1
+-----
+
+  * CHANGED: Pin Python package versions
+
 4.0.0
 -----
 
