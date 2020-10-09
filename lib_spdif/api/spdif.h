@@ -70,6 +70,15 @@ void spdif_rx(streaming chanend c, in port p_spdif, clock clk, unsigned sample_f
 #pragma select handler
 void spdif_receive_sample(streaming chanend c, int32_t &sample, size_t &index);
 
+/** Shutdown the S/PDIF component.
+ *
+ *  This function shuts down the SPDIF RX component causing the call to 
+ *  spdif_rx() to return.
+ *
+ *   \param c       chanend connected to the S/PDIF receiver component
+ */
+void spdif_receive_shutdown(streaming chanend c);
+
 /** S/PDIF transmit configure port function 
  * 
  * This function configures a port to be used by the SPDIF transmit 
