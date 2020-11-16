@@ -4,11 +4,11 @@ getApproval()
 
 pipeline {
   agent {
-    label 'x86_64&&brew&&macOS'
+    label 'x86_64&&brew&&macOS && !macOS_10_15'  // xdoc doesn't work on Catalina
   }
   environment {
     REPO = 'lib_spdif'
-    VIEW = "${env.JOB_NAME.contains('PR-') ? REPO+'_'+env.CHANGE_TARGET : REPO+'_'+env.BRANCH_NAME}"
+    VIEW = getViewName(REPO)
   }
   options {
     skipDefaultCheckout()
