@@ -36,7 +36,7 @@ pipeline {
     stage('xCORE builds and doc') {
       steps {
         dir("${REPO}") {
-          forAllMatch("${REPO}/examples", "*_examples/") { path ->
+          forAllMatch("${REPO}/examples", "*_example/") { path ->
               xcoreCompile(path)
           }
 
