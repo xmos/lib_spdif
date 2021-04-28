@@ -36,8 +36,10 @@ pipeline {
     stage('xCORE builds and doc') {
       steps {
         dir("${REPO}") {
-          forAllMatch("${REPO}/examples", "*_example/") { path ->
-              xcoreCompile(path)
+          // Cannot call xcoreAllAppsBuild('examples') as examples are not prefixed 'app_'
+          dir('examples') {
+            xcoreCompile('spdif_rx_example')
+            xcoreCompile('spdif_tx_example')
           }
 
           runXdoc("${REPO}/${REPO}/doc")
