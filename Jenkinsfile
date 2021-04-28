@@ -42,7 +42,7 @@ pipeline {
             xcoreCompile('spdif_tx_example')
           }
 
-          runXdoc("${REPO}/${REPO}/doc")
+          runXdoc("${REPO}/doc")
           // Archive all the generated .pdf docs
           archiveArtifacts artifacts: "${REPO}/**/pdf/*.pdf", fingerprint: true, allowEmptyArchive: true
         }
