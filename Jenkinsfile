@@ -33,17 +33,16 @@ pipeline {
     //     }
     //   }
     // }
-    stage('xCORE builds') {
+    stage('xCORE builds and doc') {
       steps {
         dir("${REPO}") {
-          // Cannot call xcoreAllAppsBuild('examples') as examples are not prefixed 'app_'
-          dir('examples') {
-            xcoreCompile('spdif_rx_example')
-            xcoreCompile('spdif_tx_example')
+          forAllMatch("${REPO}/examples", "*_examples/") { path ->
+              xcoreCompile(path)
           }
-          dir("${REPO}") {
-            runXdoc('doc')
-          }
+
+          runXdoc("${REPO}/${REPO}/doc")
+          // Archive all the generated .pdf docs
+          archiveArtifacts artifacts: "${REPO}/**/pdf/*.pdf", fingerprint: true, allowEmptyArchive: true
         }
       }
     }
