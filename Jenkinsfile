@@ -1,14 +1,14 @@
-@Library('xmos_jenkins_shared_library@v0.14.2') _
+@Library('xmos_jenkins_shared_library@v0.16.2') _
 
 getApproval()
 
 pipeline {
   agent {
-    label 'x86_64&&brew&&macOS'
+    label 'x86_64&&brew&&macOS && !macOS_10_15'  // xdoc doesn't work on Catalina
   }
   environment {
     REPO = 'lib_spdif'
-    VIEW = "${env.JOB_NAME.contains('PR-') ? REPO+'_'+env.CHANGE_TARGET : REPO+'_'+env.BRANCH_NAME}"
+    VIEW = getViewName(REPO)
   }
   options {
     skipDefaultCheckout()
@@ -33,7 +33,7 @@ pipeline {
     //     }
     //   }
     // }
-    stage('xCORE builds') {
+    stage('xCORE builds and doc') {
       steps {
         dir("${REPO}") {
           // Cannot call xcoreAllAppsBuild('examples') as examples are not prefixed 'app_'
@@ -41,9 +41,10 @@ pipeline {
             xcoreCompile('spdif_rx_example')
             xcoreCompile('spdif_tx_example')
           }
-          dir("${REPO}") {
-            runXdoc('doc')
-          }
+
+          runXdoc("${REPO}/doc")
+          // Archive all the generated .pdf docs
+          archiveArtifacts artifacts: "${REPO}/**/pdf/*.pdf", fingerprint: true, allowEmptyArchive: true
         }
       }
     }
