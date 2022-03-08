@@ -4,7 +4,7 @@ getApproval()
 
 pipeline {
   agent {
-    label 'x86_64&&brew&&macOS && !macOS_10_15'  // xdoc doesn't work on Catalina
+    label 'x86_64&&macOS && !macOS_10_15'  // xdoc doesn't work on Catalina
   }
   environment {
     REPO = 'lib_spdif'
