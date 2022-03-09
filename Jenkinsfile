@@ -1,10 +1,10 @@
-@Library('xmos_jenkins_shared_library@v0.16.2') _
+@Library('xmos_jenkins_shared_library@v0.18.0') _
 
 getApproval()
 
 pipeline {
   agent {
-    label 'x86_64&&brew&&macOS && !macOS_10_15'  // xdoc doesn't work on Catalina
+    label 'x86_64&&macOS && !macOS_10_15'  // xdoc doesn't work on Catalina
   }
   environment {
     REPO = 'lib_spdif'
