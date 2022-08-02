@@ -1,4 +1,4 @@
-// Copyright 2014-2021 XMOS LIMITED.
+// Copyright 2014-2022 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 #include <xs1.h>
@@ -7,12 +7,18 @@
 #include "gpio.h"
 #include "xassert.h"
 
-on tile[0] : buffered out port:32 p_spdif_tx   = XS1_PORT_1B;
-on tile[0] : in port p_mclk_in     = XS1_PORT_1E;
-on tile[0] : clock clk_audio       = XS1_CLKBLK_1;
+on tile[0] : buffered out port:32 p_spdif_tx    = XS1_PORT_1D;
+on tile[0] : in port p_mclk_in                  = XS1_PORT_1F;
+on tile[0] : clock clk_audio                    = XS1_CLKBLK_1;
 
-port port_gpio        = on tile[0]: XS1_PORT_4C;  // used for codec reset
-                                                  // and clock select
+on tile[0] : port p_gpio                        = XS1_PORT_8C;  // [0]: DSD_MODE
+                                                                // [1]: DAC_RST_N
+                                                                // [2]: USB_SEL0
+                                                                // [3]: USB_SEL1
+                                                                // [4]: VBUS_OUT_EN
+                                                                // [5]: PLL_SELECT
+                                                                // [6]: ADC_RST_N
+                                                                // [7]: MCLK_FSEL (0: 24.576MHz, 1: 22.5792MHz)
 
 
 #define SAMPLE_FREQUENCY_HZ 96000
@@ -56,25 +62,34 @@ void generate_samples(chanend c) {
     }
 }
 
-void audio_tasks(client output_gpio_if gpio[2]) {
-   chan c;
-   gpio[0].output(1);
-   gpio[1].output(1);
-   configure_clock_src(clk_audio, p_mclk_in);
-   set_clock_fall_delay(clk_audio, 7);
-   start_clock(clk_audio);
-   par 
-   {
-      spdif_tx(p_spdif_tx, c);
-      generate_samples(c);
-   }
+void audio_tasks(client output_gpio_if i_gpio[8]) 
+{
+    chan c;
+
+    for (int i= 0; i < 8; i++)
+        i_gpio[i].output(0);
+
+    i_gpio[7].output(1);
+
+    configure_clock_src(clk_audio, p_mclk_in);
+    configure_out_port_no_ready(p_spdif_tx, clk_audio, 0);
+    set_clock_fall_delay(clk_audio, 7);
+    start_clock(clk_audio);
+
+    par 
+    {
+        spdif_tx(p_spdif_tx, c);
+        generate_samples(c);
+    }
 }
 
 int main(void) {
-  interface output_gpio_if i_gpio[2];
-  par {
+  interface output_gpio_if i_gpio[8];
+  
+  par 
+  {
     on tile[0]: audio_tasks(i_gpio);
-    on tile[0]: output_gpio(i_gpio, 2, port_gpio, null);
+    on tile[0]: output_gpio(i_gpio, 8, p_gpio, null);
   }
   return 0;
 }
