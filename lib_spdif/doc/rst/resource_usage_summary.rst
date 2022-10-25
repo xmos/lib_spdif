@@ -1,5 +1,5 @@
 Typical Resource Usage
-......................
+======================
 
 .. resusage::
 
