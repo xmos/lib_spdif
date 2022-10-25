@@ -2,8 +2,10 @@
 
 .. include:: resource_usage_summary.rst
 
-External signal description
----------------------------
+|newpage|
+
+External Signal Description
+===========================
 
 The library implements the S/PDIF (Sony/Philips Digital Interface
 Format) protocol for carrying uncompressed 24-bit stereo PCM data.
@@ -19,8 +21,8 @@ also supports 2 channels at 48 KHz (which requires a minimum frequency of
 
 The receiver can receive stereo PCM signals up to 96 Khz.
 
-Connecting to the xCORE as transmitter
-......................................
+Connecting to the xCORE as Transmitter
+--------------------------------------
 
 The connection of an S/PDIF transmit line to the xCORE is shown in
 :ref:`spdif_connect_tx`.
@@ -41,9 +43,8 @@ For the best jitter tolerances on output it is recommended that a 500
 Mhz part is used.
 
 
-Connecting to the xCORE as receiver
-...................................
-
+Connecting to the xCORE as Receiver
+-----------------------------------
 
 The connection of an S/PDIF receiver line to the xCORE is shown in
 :ref:`spdif_connect_rx`.
@@ -58,10 +59,8 @@ The connection of an S/PDIF receiver line to the xCORE is shown in
 Only a single wire is connected. The clock is recovered from the
 incoming data signal.
 
-|newpage|
-
 Usage
------
+=====
 
 All S/PDIF functions can be accessed via the ``spdif.h`` header::
 
@@ -70,8 +69,8 @@ All S/PDIF functions can be accessed via the ``spdif.h`` header::
 You will also have to add ``lib_spdif`` to the
 ``USED_MODULES`` field of your application Makefile.
 
-S/PDIF transmitter
-..................
+S/PDIF Transmitter
+------------------
 
 S/PDIF components are instantiated as parallel tasks that run in a
 ``par`` statement. The application can connect via a channel
@@ -116,9 +115,8 @@ that take the channel end as arguments e.g.::
     }
   }
 
-S/PDIF receiver
-...............
-
+S/PDIF Receiver
+---------------
 
 S/PDIF components are instantiated as parallel tasks that run in a
 ``par`` statement. The application can connect via a channel
@@ -171,8 +169,8 @@ Note that your program can react to incoming samples using a
 ``select`` statement. More information on using ``par`` and ``select``
 statements can be found in the :ref:`XMOS Programming Guide<programming_guide>`.
 
-Configuring the underlying clock
-................................
+Configuring the Underlying Clock
+--------------------------------
 
 When using the transmit component, the internal clock needs to be
 configured to run of the incoming signal e.g.::
@@ -194,37 +192,36 @@ clock after setting this delay.
 Note, the delay value shown above is a typical example and may need to be 
 tuned for the specific hardware being used.
 
-
 |newpage|
 
 API
----
+===
 
-Creating an S/PDIF receiver instance
-....................................
+Creating an S/PDIF Receiver Instance
+------------------------------------
 
 .. doxygenfunction:: spdif_rx
 
 |newpage|
 
-S/PDIF receiver API
-...................
+S/PDIF Receiver API
+-------------------
 
 .. doxygenfunction:: spdif_receive_sample
 .. doxygenfunction:: spdif_receive_shutdown
 
 |newpage|
 
-Creating an S/PDIF transmitter instance
-.......................................
+Creating an S/PDIF Transmitter Instance
+---------------------------------------
 
 .. doxygenfunction:: spdif_tx_port_config
 .. doxygenfunction:: spdif_tx
 
 |newpage|
 
-S/PDIF transmitter API
-......................
+S/PDIF Transmitter API
+----------------------
 
 .. doxygenfunction:: spdif_tx_reconfigure_sample_rate
 .. doxygenfunction:: spdif_tx_output
@@ -233,9 +230,9 @@ S/PDIF transmitter API
 |appendix|
 
 Known Issues
-------------
+============
 
-No known issues.
+   * None
 
 
 .. include:: ../../../CHANGELOG.rst

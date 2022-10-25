@@ -1,8 +1,11 @@
 S/PDIF library
-==============
+##############
+
+:Latest release: 4.1.0
+:scope: General Use
 
 Summary
--------
+=======
 
 A software defined S/PDIF library
 that allows you to trasnmit or receive S/PDIF data via xCORE ports.
@@ -11,19 +14,19 @@ are controlled via C using the XMOS multicore extensions (xC) and
 provides both a S/PDIF receiver and transmitter.
 
 Features
-........
+--------
 
  * Supports stereo S/PDIF receive up to sample rates up to 96KHz
  * Supports stereo S/PDIF transmit up to 192KHz
 
-Software version and dependencies
-.................................
+Software Version and Dependencies
+---------------------------------
 
 The CHANGELOG contains information about the current and previous versions.
 For a list of direct dependencies, look for DEPENDENT_MODULES in lib_spdif/module_build_info.
 
-Related application notes
-.........................
+Related Application Notes
+-------------------------
 
 The following application notes use this library:
 
