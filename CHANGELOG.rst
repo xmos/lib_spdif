@@ -1,22 +1,26 @@
-SPDIF library change log
-========================
+lib_spdif Change Log
+=====================
+
+4.2.0
+-----
+ 
+  * ADDED:     Added shutdown function for S/PDIF Receiver
 
 4.1.0
 -----
 
-  * CHANGED: Use XMOS Public Licence Version 1
-  * CHANGED: Rearrange documentation files
+  * CHANGED:   Use XMOS Public Licence Version 1
+  * CHANGED:   Rearrange documentation files
 
 4.0.1
 -----
 
-  * CHANGED: Pin Python package versions
-  * REMOVED: not necessary cpanfile
+  * REMOVED:   Unrequired cpanfile
 
 4.0.0
 -----
 
-  * CHANGED: Build files updated to support new "xcommon" behaviour in xwaf.
+  * CHANGED:   Build files updated to support new "xcommon" behaviour in xwaf.
 
 3.1.0
 -----
