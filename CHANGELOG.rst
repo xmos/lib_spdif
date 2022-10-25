@@ -1,6 +1,11 @@
 lib_spdif Change Log
 ====================
 
+4.2.1
+-----
+
+  * CHANGED:   Documentation updates
+
 4.2.0
 -----
 
