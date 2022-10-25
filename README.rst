@@ -1,7 +1,7 @@
 S/PDIF library
 ##############
 
-:Latest release: 4.2.0
+:Latest release: 4.2.1
 
 
 :scope: General Use
