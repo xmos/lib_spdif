@@ -73,29 +73,29 @@ void spdif_receive_sample(streaming chanend c, int32_t &sample, size_t &index);
 
 /** Shutdown the S/PDIF component.
  *
- *  This function shuts down the SPDIF RX component causing the call to 
+ *  This function shuts down the SPDIF RX component causing the call to
  *  spdif_rx() to return.
  *
  *   \param c       chanend connected to the S/PDIF receiver component
  */
 void spdif_receive_shutdown(streaming chanend c);
 
-/** S/PDIF transmit configure port function 
- * 
- * This function configures a port to be used by the SPDIF transmit 
+/** S/PDIF transmit configure port function
+ *
+ * This function configures a port to be used by the SPDIF transmit
  * function.
  *
  * This function takes a delay for the clock that is to be passed into
  * the S/PDIF transmitter component. It sets the clock such that output data
  * is slightly delayed. This will work if I2S is clocked off the same clock
  * but ensures S/PDIF functions correctly.
- * 
+ *
  * \param p       the port that the S/PDIF component will use
  * \param clk     the clock that the S/PDIF component will use
  * \param p_mclk  The clock connected to the master clock frequency.
  *                Usually this should be configured to be driven by
  *                an incoming master system clock.
- * \param delay   delay to uses to sync the SPDIF signal at the external 
+ * \param delay   delay to uses to sync the SPDIF signal at the external
  *                flip-flop
  */
 void spdif_tx_port_config(out buffered port:32 p, clock clk, in port p_mclk, unsigned delay);

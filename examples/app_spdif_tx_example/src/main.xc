@@ -52,7 +52,7 @@ const int32_t sine_table[SINE_TABLE_SIZE] =
 void generate_samples(chanend c) {
     int i = 0;
     spdif_tx_reconfigure_sample_rate(c,
-                                     SAMPLE_FREQUENCY_HZ, 
+                                     SAMPLE_FREQUENCY_HZ,
                                      MCLK_FREQUENCY_48);
     while(1) {
        // Generate a sine wave
@@ -62,7 +62,7 @@ void generate_samples(chanend c) {
     }
 }
 
-void audio_tasks(client output_gpio_if i_gpio[8]) 
+void audio_tasks(client output_gpio_if i_gpio[8])
 {
     chan c;
 
@@ -76,7 +76,7 @@ void audio_tasks(client output_gpio_if i_gpio[8])
     set_clock_fall_delay(clk_audio, 7);
     start_clock(clk_audio);
 
-    par 
+    par
     {
         spdif_tx(p_spdif_tx, c);
         generate_samples(c);
@@ -85,8 +85,8 @@ void audio_tasks(client output_gpio_if i_gpio[8])
 
 int main(void) {
   interface output_gpio_if i_gpio[8];
-  
-  par 
+
+  par
   {
     on tile[0]: audio_tasks(i_gpio);
     on tile[0]: output_gpio(i_gpio, 8, p_gpio, null);

@@ -857,7 +857,7 @@ void spdif_tx(buffered out port:32 p, chanend c_in)
   }
 }
 
-void spdif_tx_reconfig_port(chanend c, out port p_spdif, const clock mclk) 
+void spdif_tx_reconfig_port(chanend c, out port p_spdif, const clock mclk)
 {
     out port * movable pp = &p_spdif;
     out buffered port:32 * movable pbuf = reconfigure_port(move(pp), out buffered port:32);
