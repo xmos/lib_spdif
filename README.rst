@@ -1,7 +1,8 @@
 S/PDIF library
 ##############
 
-:Latest release: 4.1.0
+:Latest release: 4.2.0
+
 :scope: General Use
 
 Summary
@@ -31,3 +32,11 @@ Related Application Notes
 The following application notes use this library:
 
   * AN00231 - SPDIF Receive to I2S output using Asynchronous Sample Rate Conversion
+
+Required software (dependencies)
+================================
+
+  * lib_gpio (git@github.com:xmos/lib_gpio.git)
+  * lib_xassert (git@github.com:xmos/lib_xassert.git)
+  * lib_logging (git@github.com:xmos/lib_logging.git)
+
