@@ -1,9 +1,9 @@
 lib_spdif Change Log
-=====================
+====================
 
 4.2.0
 -----
- 
+
   * ADDED:     Added shutdown function for S/PDIF Receiver
   * CHANGED:   spdif_tx_example updated to use XK-AUDIO-216-MC
 
