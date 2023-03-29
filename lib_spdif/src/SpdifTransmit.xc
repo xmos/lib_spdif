@@ -1,4 +1,4 @@
-// Copyright 2011-2022 XMOS LIMITED.
+// Copyright 2011-2023 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 /**
@@ -43,9 +43,9 @@ static unsigned inline parity32(unsigned x)
 }
 
 // Three preambles
-// preamble[0] = 0x17 => "B" - Block start & Sub-frame 1
-// preamble[1] = 0x47 => "M" - Sub-frame 1
-// preamble[2] = 0x27 => "W" - Sub-frame 2
+// preamble[0] = 0x17 => "Z" - Block start & Sub-frame 1
+// preamble[1] = 0x47 => "X" - Sub-frame 1
+// preamble[2] = 0x27 => "Y" - Sub-frame 2
 
 char preamble[3] = {0x17, 0x47, 0x27};
 
