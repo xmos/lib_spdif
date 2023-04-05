@@ -1,4 +1,4 @@
-// Copyright 2014-2022 XMOS LIMITED.
+// Copyright 2014-2023 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 #ifndef SPDIF_H_
 #define SPDIF_H_
@@ -139,6 +139,6 @@ void spdif_tx_reconfigure_sample_rate(chanend c_spdif_tx,
  * \param lsample       left sample to transmit
  * \param rsample       right sample to transmit
  */
-void spdif_tx_output(chanend c_spdif_tx, int32_t lsample, int32_t rsample);
+void spdif_tx_output(chanend c_spdif_tx, unsigned lsample, unsigned rsample);
 
 #endif /* SPDIF_H_ */
