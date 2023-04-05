@@ -7,7 +7,6 @@
  * @author  XMOS Semiconductor
  *
  * Uses a master clock to output S/PDIF encoded samples.
- * This implementation uses a lookup table to generate S/PDIF encoded data stream from raw audio samples.
  */
 
 #include <xs1.h>
@@ -16,7 +15,8 @@
 #include "assert.h"
 #include "spdif.h"
 
-#define	VALIDITY 		0x00000000		/* Validity bit (x<<28) */
+/* Validity bit (x<<28) - the validity bit is set to 0 if the data is reliable and 1 if it is not.*/
+#define	VALIDITY 		0x00000000
 
 void spdif_tx_port_config(out buffered port:32 p, clock clk, in port p_mclk, unsigned delay)
 {
@@ -140,7 +140,7 @@ void subframe_tx(out buffered port:32 p, unsigned sample_in, int ctrl, int pream
     output_word(p, encoded_word, divide);
 }
 
-void SpdifTransmit_JEG(out buffered port:32 p, chanend c_tx0, const int ctrl_left[2], const int ctrl_right[2], int divide)
+void SpdifTransmit(out buffered port:32 p, chanend c_tx0, const int ctrl_left[2], const int ctrl_right[2], int divide)
 {
 
     unsigned sample_l, sample_r;
@@ -234,65 +234,65 @@ void SpdifTransmitError(chanend c_in)
 /* S/PDIF transmit thread */
 void spdif_tx(buffered out port:32 p, chanend c_in)
 {
-  chkct(c_in, XS1_CT_END);
-  while (1) {
-    int chanStat_L[2], chanStat_R[2];
-    unsigned divide;
-    /* Receive sample frequency over channel (in Hz) */
-    unsigned  samFreq = inuint(c_in);
+    chkct(c_in, XS1_CT_END);
+    while (1) {
+        int chanStat_L[2], chanStat_R[2];
+        unsigned divide;
+        /* Receive sample frequency over channel (in Hz) */
+        unsigned  samFreq = inuint(c_in);
 
-    /* Receive master clock frequency over channel (in Hz) */
-    unsigned  mclkFreq = inuint(c_in);
+        /* Receive master clock frequency over channel (in Hz) */
+        unsigned  mclkFreq = inuint(c_in);
 
-    /* Create channel status words based on sample freq */
-    switch(samFreq)
-    {
-        case 44100:
-            chanStat_L[0] = CHAN_STAT_L | CHAN_STAT_44100;
-            chanStat_R[0] = CHAN_STAT_R | CHAN_STAT_44100;
-            break;
+        /* Create channel status words based on sample freq */
+        switch(samFreq)
+        {
+            case 44100:
+                chanStat_L[0] = CHAN_STAT_L | CHAN_STAT_44100;
+                chanStat_R[0] = CHAN_STAT_R | CHAN_STAT_44100;
+                break;
 
-        case 48000:
-            chanStat_L[0] = CHAN_STAT_L | CHAN_STAT_48000;
-            chanStat_R[0] = CHAN_STAT_R | CHAN_STAT_48000;
-            break;
+            case 48000:
+                chanStat_L[0] = CHAN_STAT_L | CHAN_STAT_48000;
+                chanStat_R[0] = CHAN_STAT_R | CHAN_STAT_48000;
+                break;
 
-        case 88200:
-            chanStat_L[0] = CHAN_STAT_L | CHAN_STAT_88200;
-            chanStat_R[0] = CHAN_STAT_R | CHAN_STAT_88200;
-            break;
+            case 88200:
+                chanStat_L[0] = CHAN_STAT_L | CHAN_STAT_88200;
+                chanStat_R[0] = CHAN_STAT_R | CHAN_STAT_88200;
+                break;
 
-        case 96000:
-            chanStat_L[0] = CHAN_STAT_L | CHAN_STAT_96000;
-            chanStat_R[0] = CHAN_STAT_R | CHAN_STAT_96000;
-            break;
+            case 96000:
+                chanStat_L[0] = CHAN_STAT_L | CHAN_STAT_96000;
+                chanStat_R[0] = CHAN_STAT_R | CHAN_STAT_96000;
+                break;
 
-        case 176400:
-            chanStat_L[0] = CHAN_STAT_L | CHAN_STAT_176400;
-            chanStat_R[0] = CHAN_STAT_R | CHAN_STAT_176400;
-            break;
+            case 176400:
+                chanStat_L[0] = CHAN_STAT_L | CHAN_STAT_176400;
+                chanStat_R[0] = CHAN_STAT_R | CHAN_STAT_176400;
+                break;
 
-        case 192000:
-            chanStat_L[0] = CHAN_STAT_L | CHAN_STAT_192000;
-            chanStat_R[0] = CHAN_STAT_R | CHAN_STAT_192000;
-            break;
+            case 192000:
+                chanStat_L[0] = CHAN_STAT_L | CHAN_STAT_192000;
+                chanStat_R[0] = CHAN_STAT_R | CHAN_STAT_192000;
+                break;
 
-        default:
-            /* Sample frequency not recognised.. carry on for now... */
-            chanStat_L[0] = CHAN_STAT_L;
-            chanStat_R[0] = CHAN_STAT_R;
-            break;
+            default:
+                /* Sample frequency not recognised.. carry on for now... */
+                chanStat_L[0] = CHAN_STAT_L;
+                chanStat_R[0] = CHAN_STAT_R;
+                break;
+
+        }
+        chanStat_L[1] = CHAN_STAT_WORD_2;
+        chanStat_R[1] = CHAN_STAT_WORD_2;
+
+        /* Calculate required divide */
+        divide = mclkFreq / (samFreq * 2 * 32 * 2);
+
+        SpdifTransmit(p, c_in, chanStat_L, chanStat_R, divide);
 
     }
-    chanStat_L[1] = CHAN_STAT_WORD_2;
-    chanStat_R[1] = CHAN_STAT_WORD_2;
-
-    /* Calculate required divide */
-    divide = mclkFreq / (samFreq * 2 * 32 * 2);
-
-    SpdifTransmit_JEG(p, c_in, chanStat_L, chanStat_R, divide);
-
-  }
 }
 
 void spdif_tx_reconfig_port(chanend c, out port p_spdif, const clock mclk)
@@ -306,15 +306,15 @@ void spdif_tx_reconfig_port(chanend c, out port p_spdif, const clock mclk)
 
 void spdif_tx_output(chanend c, unsigned l, unsigned r)
 {
-  outuint(c, l);
-  outuint(c, r);
+    outuint(c, l);
+    outuint(c, r);
 }
 
 void spdif_tx_reconfigure_sample_rate(chanend c,
                                       unsigned sample_frequency,
                                       unsigned master_clock_frequency)
 {
-  outct(c, XS1_CT_END);
-  outuint(c, sample_frequency);
-  outuint(c, master_clock_frequency);
+    outct(c, XS1_CT_END);
+    outuint(c, sample_frequency);
+    outuint(c, master_clock_frequency);
 }
