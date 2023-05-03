@@ -82,7 +82,7 @@ void set_app_pll_init (tileref tile, int app_pll_ctl)
     delay_microseconds(500);
 }
 
-void board_and_clock_setup()
+void board_setup()
 {
     //////// BOARD SETUP ////////
 
@@ -99,11 +99,13 @@ void board_and_clock_setup()
     delay_milliseconds(10);
 
     /////////////////////////////
+}
 
+void app_pll_setup(void)
+{
     set_app_pll_init(tile[0], APP_PLL_CTL_24M);
     write_node_config_reg(tile[0], XS1_SSWITCH_SS_APP_PLL_FRAC_N_DIVIDER_NUM, APP_PLL_FRAC_24M);
     write_node_config_reg(tile[0], XS1_SSWITCH_SS_APP_CLK_DIVIDER_NUM, APP_PLL_DIV_24M);
-    while(1) {}
 }
 
 int main(void) {
@@ -111,7 +113,11 @@ int main(void) {
     chan c_spdif;
     par
     {
-        on tile[0]: board_and_clock_setup();
+        on tile[0]: {
+            board_setup();
+            app_pll_setup();
+            while(1) {};
+        }
         on tile[1]: {
             spdif_tx_port_config(p_spdif_tx, clk_audio, p_mclk_in, 7);
             start_clock(clk_audio);
