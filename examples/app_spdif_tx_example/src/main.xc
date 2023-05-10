@@ -9,7 +9,7 @@
 on tile[0]: out             port    p_ctrl          = XS1_PORT_8D;
 on tile[0]: in              port    p_i2c_sda       = XS1_PORT_1M;
 on tile[0]: in              port    p_coax_rx       = XS1_PORT_1N;
-on tile[0]: in              port    p_adat_opt_rx   = XS1_PORT_1O;
+on tile[0]: in              port    p_opt_rx        = XS1_PORT_1O;
 on tile[0]: in              port    p_word_clk      = XS1_PORT_1P;
 
 on tile[1]: out buffered    port:32 p_spdif_tx      = XS1_PORT_1A;
@@ -94,10 +94,10 @@ void board_setup(void)
     //////// BOARD SETUP ////////
 
     // Define other tile 0 ports as inputs to avoid driving them when writing to 8 bit port.
-    p_i2c_sda       :> void;
-    p_coax_rx       :> void;
-    p_adat_opt_rx   :> void;
-    p_word_clk      :> void;
+    p_i2c_sda   :> void;
+    p_coax_rx   :> void;
+    p_opt_rx    :> void;
+    p_word_clk  :> void;
     
     // Drive control port to turn on 3V3 and set MCLK_DIR/EXT_PLL_SEL to select App PLL.
     p_ctrl <: 0xA0;
