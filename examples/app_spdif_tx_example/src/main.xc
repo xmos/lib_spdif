@@ -1,10 +1,10 @@
-// Copyright 2014-2022 XMOS LIMITED.
+// Copyright 2014-2023 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 #include <xs1.h>
 #include <platform.h>
-#include "spdif.h"
-#include "xassert.h"
+#include <spdif.h>
+#include <xassert.h>
 
 on tile[0]: out             port    p_ctrl          = XS1_PORT_8D;
 on tile[0]: in              port    p_i2c_sda       = XS1_PORT_1M;
@@ -82,7 +82,14 @@ void set_app_pll_init (tileref tile, int app_pll_ctl)
     delay_microseconds(500);
 }
 
-void board_setup()
+void app_pll_setup(void)
+{
+    set_app_pll_init(tile[0], APP_PLL_CTL_24M);
+    write_node_config_reg(tile[0], XS1_SSWITCH_SS_APP_PLL_FRAC_N_DIVIDER_NUM, APP_PLL_FRAC_24M);
+    write_node_config_reg(tile[0], XS1_SSWITCH_SS_APP_CLK_DIVIDER_NUM, APP_PLL_DIV_24M);
+}
+
+void board_setup(void)
 {
     //////// BOARD SETUP ////////
 
@@ -99,13 +106,6 @@ void board_setup()
     delay_milliseconds(10);
 
     /////////////////////////////
-}
-
-void app_pll_setup(void)
-{
-    set_app_pll_init(tile[0], APP_PLL_CTL_24M);
-    write_node_config_reg(tile[0], XS1_SSWITCH_SS_APP_PLL_FRAC_N_DIVIDER_NUM, APP_PLL_FRAC_24M);
-    write_node_config_reg(tile[0], XS1_SSWITCH_SS_APP_CLK_DIVIDER_NUM, APP_PLL_DIV_24M);
 }
 
 int main(void) {
