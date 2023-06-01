@@ -5,8 +5,10 @@ lib_spdif Change Log
 -----
 
   * CHANGED:   Updated examples for new XK-AUDIO-316-MC board
-  * CHANGED:   Updated transmit to simplified implementation (note, no longer supports XS1 based devices)
-  * CHANGED:   Removed headers SpdifReceive.h and SpdifTransmit.h. Users should include spdif.h
+  * CHANGED:   Updated transmit to simplified implementation (note, no longer
+    supports XS1 based devices)
+  * CHANGED:   Removed headers SpdifReceive.h and SpdifTransmit.h. Users should
+    include spdif.h
 
 4.2.1
 -----
