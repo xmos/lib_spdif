@@ -20,9 +20,9 @@ void handle_samples(streaming chanend c)
     int32_t sample;
     size_t index;
     size_t left_count, right_count;
-    while(1) 
+    while(1)
     {
-        select 
+        select
         {
             case spdif_receive_sample(c, sample, index):
             // sample contains the 24bit data
@@ -34,8 +34,8 @@ void handle_samples(streaming chanend c)
             break;
         }
         size_t total = left_count + right_count;
-        
-        if (total % 10000 == 0) 
+
+        if (total % 10000 == 0)
         {
             debug_printf("Received %u left samples and %u right samples\n",
                    left_count,
@@ -51,15 +51,15 @@ void board_setup(void)
     p_coax_rx   :> void;
     p_opt_rx    :> void;
     p_word_clk  :> void;
-    
+
     // Drive control port to turn on 3V3 and set MCLK_DIR/EXT_PLL_SEL to select App PLL.
     p_ctrl <: 0xA0;
-    
+
     // Wait for power supplies to be up and stable.
     delay_milliseconds(10);
 }
 
-int main(void) 
+int main(void)
 {
     streaming chan c;
     par {

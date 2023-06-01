@@ -109,31 +109,31 @@ static inline void subframe_tx(out buffered port:32 p, unsigned sample_in, int c
     /* Preamble */
     unsigned char encoded_preamble = preamble[preamble_type];
 
-    if(lastbit == 1) 
+    if(lastbit == 1)
     {
         encoded_preamble ^= 0xFF;  // invert all bits of the encoded preamble
     }
     // Don't need to update lastbit here as due to pattern of preamble bits it is never changed.
-    
+
     word = word >> 4; // We've finished with the preamble
-    
+
     /* Next 12 bits of subframe word */
     unsigned encoded_word = biphase_encode(word & 0xFFF);
-    if(lastbit == 1) 
+    if(lastbit == 1)
     {
         encoded_word = ~encoded_word;  // invert all bits of the encoded word
     }
     encoded_word = (encoded_word << 8) | encoded_preamble;
-    
+
     // Now we do need to update lastbit to see if the last bit we're sending was 1 or 0.
     lastbit = encoded_word >> 31;
     output_word(p, encoded_word, divide);
-    
+
     word = word >> 12; // Shift the word down the 12 bits we've just output.
-    
+
     /* Remaining 16 bits of subframe word (we've shifted right by 4 and then 12 so only bottom 16 still remaining) */
     encoded_word = biphase_encode(word);
-    if(lastbit == 1) 
+    if(lastbit == 1)
     {
         encoded_word = ~encoded_word;  // invert all bits of the encoded word
     }
@@ -167,11 +167,11 @@ void SpdifTransmit(out buffered port:32 p, chanend c_tx0, const int ctrl_left[2]
         for(int i = 0 ; i < 192; i++)
         {
             /* Sub-frame 1 */
-            if(i == 0) 
+            if(i == 0)
             {
                 subframe_tx(p, sample_l, controlLeft, 0, divide);  // Block start & Sub-frame 1
             }
-            else 
+            else
             {
                 subframe_tx(p, sample_l, controlLeft, 1, divide); // Sub-frame 1
             }
@@ -194,7 +194,7 @@ void SpdifTransmit(out buffered port:32 p, chanend c_tx0, const int ctrl_left[2]
             sample_l = inuint(c_tx0);
             sample_r = inuint(c_tx0);
 
-            if(i == 31) 
+            if(i == 31)
             {
                 controlLeft = ctrl_left[1];
                 controlRight = ctrl_right[1];

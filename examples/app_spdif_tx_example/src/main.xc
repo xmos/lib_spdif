@@ -69,7 +69,7 @@ void generate_samples(chanend c) {
 void set_app_pll_init (tileref tile, int app_pll_ctl)
 {
     // delay_microseconds(500);
-    // Disable the PLL 
+    // Disable the PLL
     write_node_config_reg(tile, XS1_SSWITCH_SS_APP_PLL_CTL_NUM, (app_pll_ctl & 0xF7FFFFFF));
     // Enable the PLL to invoke a reset on the appPLL.
     write_node_config_reg(tile, XS1_SSWITCH_SS_APP_PLL_CTL_NUM, app_pll_ctl);
@@ -98,10 +98,10 @@ void board_setup(void)
     p_coax_rx   :> void;
     p_opt_rx    :> void;
     p_word_clk  :> void;
-    
+
     // Drive control port to turn on 3V3 and set MCLK_DIR/EXT_PLL_SEL to select App PLL.
     p_ctrl <: 0xA0;
-    
+
     // Wait for power supplies to be up and stable.
     delay_milliseconds(10);
 
