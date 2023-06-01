@@ -1,7 +1,9 @@
 S/PDIF library
 ##############
 
-:Latest release: 4.2.1
+:Version: 5.0.0
+:Vendor: XMOS
+
 :scope: General Use
 
 Summary
@@ -33,7 +35,15 @@ The following application notes use this library:
 Required Software (dependencies)
 ================================
 
-  * lib_gpio (www.github.com/xmos/lib_gpio)
-  * lib_xassert (www.github.com/xmos/lib_xassert)
-  * lib_logging (www.github.com/xmos/lib_logging)
+  * None
+
+Documentation
+=============
+
+You can find the documentation for this software in the /doc directory of the package.
+
+Support
+=======
+
+This package is supported by XMOS Ltd. Issues can be raised against the software at: http://www.xmos.com/support
 
