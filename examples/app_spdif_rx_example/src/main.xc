@@ -20,8 +20,10 @@ void handle_samples(streaming chanend c)
     int32_t sample;
     size_t index;
     size_t left_count, right_count;
-    while(1) {
-        select {
+    while(1) 
+    {
+        select 
+        {
             case spdif_receive_sample(c, sample, index):
             // sample contains the 24bit data
             // You can process the audio data here
@@ -32,7 +34,9 @@ void handle_samples(streaming chanend c)
             break;
         }
         size_t total = left_count + right_count;
-        if (total % 10000 == 0) {
+        
+        if (total % 10000 == 0) 
+        {
             debug_printf("Received %u left samples and %u right samples\n",
                    left_count,
                    right_count);
@@ -42,8 +46,6 @@ void handle_samples(streaming chanend c)
 
 void board_setup(void)
 {
-    //////// BOARD SETUP ////////
-
     // Define other tile 0 ports as inputs to avoid driving them when writing to 8 bit port.
     p_i2c_sda   :> void;
     p_coax_rx   :> void;
@@ -55,11 +57,10 @@ void board_setup(void)
     
     // Wait for power supplies to be up and stable.
     delay_milliseconds(10);
-
-    /////////////////////////////
 }
 
-int main(void) {
+int main(void) 
+{
     streaming chan c;
     par {
         on tile[0]: {
