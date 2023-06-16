@@ -59,7 +59,7 @@ static inline unsigned biphase_encode(unsigned data_in)
     return zip(residual >> 1, ~residual, 0);
 }
 
-void output_word(out buffered port:32 p, unsigned encoded_word, int divide)
+static inline void output_word(out buffered port:32 p, unsigned encoded_word, int divide)
 {
     switch(divide)
     {
