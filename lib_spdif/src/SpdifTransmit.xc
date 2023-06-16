@@ -43,11 +43,9 @@ static unsigned inline parity32(unsigned x)
 }
 
 // Three preambles
-// preamble[0] = 0x17 => "Z" - Block start & Sub-frame 1
-// preamble[1] = 0x47 => "X" - Sub-frame 1
-// preamble[2] = 0x27 => "Y" - Sub-frame 2
-
-char preamble[3] = {0x17, 0x47, 0x27};
+#define SPDIF_PREAMBLE_Z (0x17) // Block start & Sub-frame 1
+#define SPDIF_PREAMBLE_X (0x47) // Sub-frame 1
+#define SPDIF_PREAMBLE_Y (0x27) // Sub-frame 2
 
 // This encodes 16 input data bits into 32 biphase mark bits.
 // 16 input bits must be in the LS 16 bits of the 32 bit input.
@@ -61,7 +59,7 @@ static inline unsigned biphase_encode(unsigned data_in)
     return zip(residual >> 1, ~residual, 0);
 }
 
-static inline void output_word(out buffered port:32 p, unsigned encoded_word, int divide)
+void output_word(out buffered port:32 p, unsigned encoded_word, int divide)
 {
     switch(divide)
     {
@@ -91,13 +89,14 @@ static inline void output_word(out buffered port:32 p, unsigned encoded_word, in
             p <: (unsigned int) (final >> 32);
             break;
         default:
-            /* Mclk does not support required sample freq */
+            /* Mclk does not support required sample freq - unreachable due to previous error checks */
+             __builtin_unreachable();
             break;
     }
 }
 
 #pragma unsafe arrays
-static inline void subframe_tx(out buffered port:32 p, unsigned sample_in, int ctrl, int preamble_type, int divide)
+static inline void subframe_tx(out buffered port:32 p, unsigned sample_in, int ctrl, unsigned char encoded_preamble, int divide)
 {
     static int lastbit = 0;
     unsigned word, sample, control, parity;
@@ -105,9 +104,6 @@ static inline void subframe_tx(out buffered port:32 p, unsigned sample_in, int c
     control = (ctrl & 1) << 30;
     parity = parity32(sample | control | VALIDITY) << 31;
     word = sample | control | parity | VALIDITY;
-
-    /* Preamble */
-    unsigned char encoded_preamble = preamble[preamble_type];
 
     if(lastbit == 1)
     {
@@ -169,17 +165,17 @@ void SpdifTransmit(out buffered port:32 p, chanend c_tx0, const int ctrl_left[2]
             /* Sub-frame 1 */
             if(i == 0)
             {
-                subframe_tx(p, sample_l, controlLeft, 0, divide);  // Block start & Sub-frame 1
+                subframe_tx(p, sample_l, controlLeft, SPDIF_PREAMBLE_Z, divide);  // Block start & Sub-frame 1
             }
             else
             {
-                subframe_tx(p, sample_l, controlLeft, 1, divide); // Sub-frame 1
+                subframe_tx(p, sample_l, controlLeft, SPDIF_PREAMBLE_X, divide); // Sub-frame 1
             }
 
             controlLeft >>=1;
 
             /* Sub-frame 2 */
-            subframe_tx(p, sample_r, controlRight, 2, divide);
+            subframe_tx(p, sample_r, controlRight, SPDIF_PREAMBLE_Y, divide);
 
             controlRight >>=1;
 
@@ -240,6 +236,8 @@ void spdif_tx(buffered out port:32 p, chanend c_in)
     {
         int chanStat_L[2], chanStat_R[2];
         unsigned divide;
+        unsigned error = 0;
+
         /* Receive sample frequency over channel (in Hz) */
         unsigned  samFreq = inuint(c_in);
 
@@ -280,9 +278,7 @@ void spdif_tx(buffered out port:32 p, chanend c_in)
                 break;
 
             default:
-                /* Sample frequency not recognised.. carry on for now... */
-                chanStat_L[0] = CHAN_STAT_L;
-                chanStat_R[0] = CHAN_STAT_R;
+                error++;
                 break;
 
         }
@@ -292,7 +288,13 @@ void spdif_tx(buffered out port:32 p, chanend c_in)
         /* Calculate required divide */
         divide = mclkFreq / (samFreq * 2 * 32 * 2);
 
-        SpdifTransmit(p, c_in, chanStat_L, chanStat_R, divide);
+        if((divide < 1) || (divide > 4)) 
+            error++;
+
+        if(error)
+            SpdifTransmitError(c_in);
+        else
+            SpdifTransmit(p, c_in, chanStat_L, chanStat_R, divide);
     }
 }
 
