@@ -1,6 +1,11 @@
 lib_spdif Change Log
 ====================
 
+5.0.1
+-----
+
+  * FIXED:     Reinstated graceful handling of bad sample-rate/master clock pair
+
 5.0.0
 -----
 
