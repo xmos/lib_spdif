@@ -33,6 +33,17 @@ pipeline {
     //     }
     //   }
     // }
+    stage("Tests") {
+      steps {
+        dir("${REPO}/tests"){
+          viewEnv(){
+            withVenv() {
+              sh "pytest -v --junitxml=pytest_result.xml"
+            }
+          }
+        }
+      }
+    }
     stage('xCORE builds and doc') {
       steps {
         dir("${REPO}") {
