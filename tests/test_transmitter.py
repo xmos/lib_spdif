@@ -8,7 +8,6 @@ from pathlib import Path
 from spdif_test_utils import (
     Chan_samples,
     Chan_status,
-    audio_function,
     Spdif_rx,
     Audio_func,
 )
