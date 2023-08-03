@@ -247,16 +247,16 @@ class Chan_samples():
     """
     """
     def __init__(self,
-                 audio_func = (lambda previous : None),
-                 validity_flag = (lambda : 0x0),
-                 user_data = (lambda : 0x0),
-                 chan_bit = (lambda : 0x0)
+                 audio_func = None,
+                 validity_flag = None,
+                 user_data = None,
+                 chan_bit = None
                  ):
-        self._audio = audio_func
+        self._audio = audio_func if audio_func != None else self._audio_func
         self._previous = None
-        self._validity_flag = validity_flag
-        self._user_data = user_data
-        self._chan_bit = chan_bit
+        self._validity_flag = validity_flag if validity_flag != None else self._validity_flag
+        self._user_data = user_data if user_data != None else self._user_data
+        self._chan_bit = chan_bit if chan_bit != None else self._chan_bit
     def check(self, sample):
         expected = self._chan_bit() << 26
         expected |= self._user_data() << 25
@@ -279,6 +279,16 @@ class Chan_samples():
         #     print(self._previous)
         #     print("sample   = " +'{:028b}'.format(sample) + "\nexpected = "+'{:028b}'.format(expected)+ "\n")
         return True
+    
+    #these functions are to work around issues with lambda functions and pickling on macOS
+    def _audio_func(self, previous):
+        return None
+    def _validity_flag(self):
+        return 0
+    def _user_data(self):
+        return 0
+    def _chan_bit(self):
+        return 0
 
 class Audio_func():
     def __init__(self, type="none", value=0):
