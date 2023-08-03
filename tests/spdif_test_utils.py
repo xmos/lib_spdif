@@ -280,14 +280,24 @@ class Chan_samples():
         #     print("sample   = " +'{:028b}'.format(sample) + "\nexpected = "+'{:028b}'.format(expected)+ "\n")
         return True
 
-def audio_function(type="none", value=0):
-    type = type.lower()
-    match type:
-        case "none":
-            return (lambda value: (lambda previous: None))(value)
-        case "fixed":
-            return (lambda value: (lambda previous: value))(value)
-        case "ramp":
-            return (lambda value: (lambda previous: ((previous) + value) if previous != None else None))(value)
-        case _:
-            raise Exception("audio data type not supported")
+class Audio_func():
+    def __init__(self, type="none", value=0):
+        match type.lower():
+            case "none":
+                self.next = self._none
+            case "fixed":
+                self.next = self._fixed
+            case "ramp":
+                self.next = self._ramp
+            case _:
+                raise Exception("audio data type not supported")
+        self._value = value
+
+    def _none(self, previous):
+        return None
+
+    def _fixed(self, previous):
+        return self._value
+
+    def _ramp(self, previous):
+        return (previous + self._value) if previous != None else None

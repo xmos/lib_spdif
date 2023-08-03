@@ -9,7 +9,8 @@ from spdif_test_utils import (
     Chan_samples,
     Chan_status,
     audio_function,
-    Spdif_rx
+    Spdif_rx,
+    Audio_func,
 )
 
 def _get_duration():
@@ -35,8 +36,8 @@ def test_spdif_transmit(sam_freq, capfd):
         assert False
     
     expect_samples = [
-        Chan_samples(audio_func=audio_function("ramp",chan_ramp0),chan_bit=Chan_status(channel_No=0,sam_freq=sam_freq)._get_chan_info_bit),
-        Chan_samples(audio_func=audio_function("ramp",chan_ramp1),chan_bit=Chan_status(channel_No=1,sam_freq=sam_freq)._get_chan_info_bit)
+        Chan_samples(audio_func=Audio_func("ramp",chan_ramp0).next,chan_bit=Chan_status(channel_No=0,sam_freq=sam_freq)._get_chan_info_bit),
+        Chan_samples(audio_func=Audio_func("ramp",chan_ramp1).next,chan_bit=Chan_status(channel_No=1,sam_freq=sam_freq)._get_chan_info_bit)
     ]
     spdif_rx = Spdif_rx(p_clock,p_spdif_out,sam_freq,mclk_freq,expect_samples)
 
