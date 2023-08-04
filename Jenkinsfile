@@ -4,7 +4,7 @@ getApproval()
 
 pipeline {
   agent {
-    label 'x86_64&&macOS && !macOS_10_15'  // xdoc doesn't work on Catalina
+    label 'x86_64 && macOS && !macOS_10_15'  // macOS handles multiprocessing in python differently causing causing runime issues
   }
   environment {
     REPO = 'lib_spdif'
@@ -56,6 +56,9 @@ pipeline {
     }
   }
   post {
+    always {
+      junit "${REPO}/tests/pytest_result.xml"
+    }
     success {
       updateViewfiles()
     }

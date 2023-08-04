@@ -71,23 +71,21 @@ class Spdif_rx(Clock):
             elif in_normalised != 1:
                 raise Exception("Error: no biphase transition", self._state, self._data)
 
-            match self._state:
-                case -1:
-                    self._wait_for_signal()
-                case 3:
-                    if self._data:
-                        self._check_preamble()
-                        self._state += 1
-                case 31:
-                    if self._data and self._samples[self._chan].check(self._in_buff):
-                        self._in_buff = 0x0
-                        self._state = 0
-                case _:
-                    if self._data:
-                        self._state += 1
-                    elif in_normalised != 1:
-                        
-                        pass
+            if self._state == -1:
+                self._wait_for_signal()
+            elif self._state == 3:
+                if self._data:
+                    self._check_preamble()
+                    self._state += 1
+            elif self._state == 31:
+                if self._data and self._samples[self._chan].check(self._in_buff):
+                    self._in_buff = 0x0
+                    self._state = 0
+            else:
+                if self._data:
+                    self._state += 1
+                elif in_normalised != 1:
+                    pass
         self._div = (self._div +1) % self._divider
 
     def _normalise_input(self, pin):
@@ -100,19 +98,18 @@ class Spdif_rx(Clock):
             self._state = 4
 
     def _check_preamble(self,):
-        match self._in_buff:
-            case 0b10011100:
-                self._chan = 0
-            case 0b10010011:
-                self._chan = 0
-            case 0b10010110:
-                self._chan = 1
-            case 0b0:
-                # TODO this is a bit hacky make a cleaner exit fin / dead air
-                print("PASS")
-                os._exit(os.EX_OK)
-            case _:
-                raise Exception("Error: Unexpected preamble " + bin(self._in_buff))
+        if self._in_buff == 0b10011100:
+            self._chan = 0
+        elif self._in_buff == 0b10010011:
+            self._chan = 0
+        elif self._in_buff == 0b10010110:
+            self._chan = 1
+        elif self._in_buff == 0b0:
+            # TODO this is a bit hacky make a cleaner exit fin / dead air
+            print("PASS")
+            os._exit(os.EX_OK)
+        else:
+            raise Exception("Error: Unexpected preamble " + bin(self._in_buff))
         self._in_buff = 0x0
 
 class Spdif_tx(Clock):
@@ -194,26 +191,26 @@ class Chan_status():
         self._chan_info.append(byte)
         # byte 3
         byte = 0
-        match sam_freq:
-            case 22050:
-                sam_freq = 0b00100000
-            case 44100:
-                sam_freq = 0b00000000
-            case 88200:
-                sam_freq = 0b00010000
-            case 176400:
-                sam_freq = 0b00110000
-            case 24000:
-                sam_freq = 0b01100000
-            case 48000:
-                sam_freq = 0b01000000
-            case 96000:
-                sam_freq = 0b01010000
-            case 192000:
-                sam_freq = 0b01110000
-            case _:
-                print(error_message)
-                sam_freq = 0b0000
+        
+        if sam_freq == 22050:
+            sam_freq = 0b00100000
+        elif sam_freq == 44100:
+            sam_freq = 0b00000000
+        elif sam_freq == 88200:
+            sam_freq = 0b00010000
+        elif sam_freq == 176400:
+            sam_freq = 0b00110000
+        elif sam_freq == 24000:
+            sam_freq = 0b01100000
+        elif sam_freq == 48000:
+            sam_freq = 0b01000000
+        elif sam_freq == 96000:
+            sam_freq = 0b01010000
+        elif sam_freq == 192000:
+            sam_freq = 0b01110000
+        else:
+            print(error_message)
+            sam_freq = 0b0000
         byte = byte | sam_freq
         if clock_accuracy != "level II":
             print(error_message)
@@ -263,13 +260,13 @@ class Chan_samples():
         expected |= self._validity_flag() << 24
         audio = self._audio(self._previous)
         if audio == None:
-            parity = (sample & 0x07FFFFFF).bit_count() & 0x1
+            parity = bin(sample & 0x07FFFFFF).count('1') & 0x1
             self._previous = sample & 0x00FFFFFF
             sample &= 0x0F000000
         else:
             self._previous = (((1<<24) -1) & audio)  & 0x00FFFFFF
             expected |= self._previous
-            parity = expected.bit_count() & 0x1
+            parity = bin(expected).count('1') & 0x1
         expected |= parity << 27
 
         if sample != expected:
@@ -292,15 +289,15 @@ class Chan_samples():
 
 class Audio_func():
     def __init__(self, type="none", value=0):
-        match type.lower():
-            case "none":
-                self.next = self._none
-            case "fixed":
-                self.next = self._fixed
-            case "ramp":
-                self.next = self._ramp
-            case _:
-                raise Exception("audio data type not supported")
+        _type = type.lower()
+        if _type == "none":
+            self.next = self._none
+        elif _type == "fixed":
+            self.next = self._fixed
+        elif _type == "ramp":
+            self.next = self._ramp
+        else:
+            raise Exception("audio data type not supported")
         self._value = value
 
     def _none(self, previous):
