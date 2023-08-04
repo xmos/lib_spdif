@@ -4,7 +4,7 @@ getApproval()
 
 pipeline {
   agent {
-    label 'x86_64 && macOS && !macOS_10_15'  // macOS handles multiprocessing in python differently causing causing runime issues
+    label 'x86_64 && linux'
   }
   environment {
     REPO = 'lib_spdif'
