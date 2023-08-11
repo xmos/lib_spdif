@@ -1,7 +1,7 @@
 # XMOS bin files
 *.xe
 *.bin
-*/bin/*
+**/bin/*
 
 # XMOS temp files
 .build*
@@ -47,5 +47,5 @@ host_usb_mixer_control/xmos_mixer
 **/.venv/**
 **/.vscode/**
 **.egg-info
-*/logs/*
+**/logs/*
 .python-version

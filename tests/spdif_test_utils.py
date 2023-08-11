@@ -4,6 +4,10 @@
 from Pyxsim import SimThread
 import os
 
+PREAMBLE_Z = "10011100"
+PREAMBLE_X = "10010011"
+PREAMBLE_Y = "10010110"
+
 class Clock(SimThread):
     """
     
@@ -47,70 +51,31 @@ class Spdif_rx(Clock):
     """
 
     """
-    def __init__(self,clock_port: str, spdif_out_port: str, sam_freq: int, mclk_freq: int, samples):
+    def __init__(self,clock_port: str, spdif_out_port: str, sam_freq: int, mclk_freq: int, samples: int):
         super().__init__(clock_port, mclk_freq)
         self._spdif_out_port = spdif_out_port
         self._samples = samples
         self._pin = 0
-        self._data = False
-        self._in_buff = 0b0
-        self._state = -1
-        self._chan = 0
+        self._in_buff = ""
+        self._state = 0
         self._divider = int(mclk_freq / (sam_freq * 128))
         self._div = 0
 
     def on_high(self):
         if self._div == 0:
-            self._pin , in_normalised = self._normalise_input(self.xsi.sample_port_pins(self._spdif_out_port))
-            self._data = not self._data
-
-            if self._state <= 3:
-                self._in_buff = ((self._in_buff << 1) | in_normalised) & 0b11111111
-            elif self._data:
-                self._in_buff |= in_normalised << (self._state - 4)
-            elif in_normalised != 1:
-                raise Exception("Error: no biphase transition", self._state, self._data)
-
-            if self._state == -1:
-                self._wait_for_signal()
-            elif self._state == 3:
-                if self._data:
-                    self._check_preamble()
-                    self._state += 1
-            elif self._state == 31:
-                if self._data and self._samples[self._chan].check(self._in_buff):
-                    self._in_buff = 0x0
-                    self._state = 0
-            else:
-                if self._data:
-                    self._state += 1
-                elif in_normalised != 1:
-                    pass
+            pin = self.xsi.sample_port_pins(self._spdif_out_port)
+            self._in_buff = self._in_buff[-63:] + ("1" if self._pin ^ pin else "0")
+            self._pin = pin
+            if self._in_buff[:8] == PREAMBLE_Z:
+                print(str(self._state) + "[Z] - " + self._in_buff[9::2] + " " +self._in_buff[8::2])
+            elif self._in_buff[:8] == PREAMBLE_X:
+                print(str(self._state) + "[X] - " + self._in_buff[9::2] + " " +self._in_buff[8::2])
+            elif self._in_buff[:8] == PREAMBLE_Y:
+                print(str(self._state) + "[Y] - " + self._in_buff[9::2] + " " +self._in_buff[8::2])
+                self._state += 1
+            if self._state >= self._samples:
+                os._exit(os.EX_OK)
         self._div = (self._div +1) % self._divider
-
-    def _normalise_input(self, pin):
-        return pin, self._pin ^ pin
-    
-    def _wait_for_signal(self):
-        if self._in_buff == 0b10011100:
-            self._in_buff = 0x0
-            self._data = True
-            self._state = 4
-
-    def _check_preamble(self,):
-        if self._in_buff == 0b10011100:
-            self._chan = 0
-        elif self._in_buff == 0b10010011:
-            self._chan = 0
-        elif self._in_buff == 0b10010110:
-            self._chan = 1
-        elif self._in_buff == 0b0:
-            # TODO this is a bit hacky make a cleaner exit fin / dead air
-            print("PASS")
-            os._exit(os.EX_OK)
-        else:
-            raise Exception("Error: Unexpected preamble " + bin(self._in_buff))
-        self._in_buff = 0x0
 
 class Spdif_tx(Clock):
     """
@@ -125,24 +90,23 @@ class Spdif_tx(Clock):
         
         pass
 
-class Chan_status():
-    """
-    """
+class Frames():
     def __init__(
             self,
+            sources = None,
+            channels = None,
+            no_of_samples = 0,
             #byte 0
             pro=False,
             digital_audio=True,
             copyright=False,
-            preEmphasis="none",
+            preEmphasis="000",
             mode=0,
             #byte 1
             catagory_code="digital/digital converters",
             catagory="other",
             L_bit=False,
             #byte 2
-            source_No=-1, # do not take into account
-            channel_No=-1, # do not take into account
             #byte 3
             sam_freq=44100,
             clock_accuracy="level II",
@@ -151,141 +115,141 @@ class Chan_status():
             original_sam_freq=0, # unknown
             #byte 5-23
             extra=None, # List of bytes
-            ):
-        source_No +=1 # this is just to have 0 indexed channel numbers as input
-        channel_No +=1 # this is just to have 0 indexed channel numbers as input
-        self._chan_info = []
-        self._bit = 0
-        self._byte = 0
-        error_message="Unsupported option used"
-        # byte 0
-        byte = 0
-        if pro:
-            print(error_message)
-        if not digital_audio:
-            byte = byte | 0b01000000
-        if not copyright:
-            byte = byte | 0b00100000
-        if preEmphasis != "none":
-            print(error_message)
-        if mode != 0:
-            print(error_message)
-        self._chan_info.append(byte)
-        # byte 1
-        byte = 0
+        ):
+        self._samples = []
+        if sources != None:
+            pass
+        elif channels != None:
+            for i, chan in enumerate(channels):
+                self._samples.append([])
+                value = 0
+                audio_func = Audio_func(chan[0],chan[1]).next
+                for _ in range(no_of_samples):
+                    self._samples[i].append("{:024b}".format(((1 << 24) -1) & value)[::-1])
+                    value = audio_func(value)
+        self._validity_flag = []
+        self._user_data = []
+        self._channel_status = []
+        for i, _ in enumerate(self._samples):
+            self._validity_flag.append("0")
+            self._user_data.append("0")
+            self._channel_status.append(
+                self._get_byte_0(pro,digital_audio,copyright,preEmphasis,mode) +
+                self._get_byte_1(catagory_code,catagory,L_bit) +
+                self._get_byte_2(i+1 if sources != None else 0, i+1 if channels != None else 0) +
+                self._get_byte_3(sam_freq,clock_accuracy) +
+                self._get_byte_4(bit_depth, original_sam_freq) +
+                self._get_byte_extra(extra)
+            )
+        # print(self._channel_status)
+
+    def _get_byte_0(self, pro, digital_audio,copyright,preEmphasis,mode):
+        byte = ""
+        byte += "1" if pro else "0"
+        byte += "1" if not digital_audio else "0"
+        byte += "1" if not copyright else "0"
+        byte += preEmphasis
+        byte += "{:02b}".format(mode)
+        return byte
+    def _get_byte_1(self, catagory_code,catagory,L_bit):
+        byte = ""
         if catagory_code == "digital/digital converters":
-            byte = byte | 0b01000000
+            byte += "010"
+            if catagory == "other":
+                byte += "1111"
+            else:
+                #error
+                pass
         else:
-            print(error_message)
-        if catagory == "other":
-            byte = byte | 0b00011110
-        else:
-            print(error_message)
-        if L_bit:
-            byte = byte | 0b00000001
-        self._chan_info.append(byte)
-        # byte 2
-        byte = 0
-        byte = byte | int('{:08b}'.format(source_No)[::-1], 2) & 0b11110000
-        byte = byte | int('{:04b}'.format(channel_No)[::-1], 2) & 0b00001111
-        self._chan_info.append(byte)
-        # byte 3
-        byte = 0
-        
+            #error
+            pass
+        byte += "1" if L_bit else "0"
+        return byte
+    def _get_byte_2(self, source_No, channel_No):
+        byte = ""
+        byte += "{:04b}".format(source_No)[::-1]
+        byte += "{:04b}".format(channel_No)[::-1]
+        return byte
+    def _get_byte_3(self,sam_freq,clock_accuracy):
+        byte = ""
         if sam_freq == 22050:
-            sam_freq = 0b00100000
+            byte = "0010"
         elif sam_freq == 44100:
-            sam_freq = 0b00000000
+            byte = "0000"
         elif sam_freq == 88200:
-            sam_freq = 0b00010000
+            byte = "0001"
         elif sam_freq == 176400:
-            sam_freq = 0b00110000
+            byte = "0011"
         elif sam_freq == 24000:
-            sam_freq = 0b01100000
+            byte = "0110"
         elif sam_freq == 48000:
-            sam_freq = 0b01000000
+            byte = "0100"
         elif sam_freq == 96000:
-            sam_freq = 0b01010000
+            byte = "0101"
         elif sam_freq == 192000:
-            sam_freq = 0b01110000
+            byte = "0111"
         else:
-            print(error_message)
-            sam_freq = 0b0000
-        byte = byte | sam_freq
-        if clock_accuracy != "level II":
-            print(error_message)
-        self._chan_info.append(byte)
-        # byte 4
-        byte = 0
-        if bit_depth == 24:
-            byte = byte | 0b11010000
+            #error
+            pass
+        if clock_accuracy == "level II":
+            byte += "00"
         else:
-            print(error_message)
-        if original_sam_freq != 0:
-            print(error_message)
-        self._chan_info.append(byte)
-
-        if extra != None:
-            self._chan_info = self._chan_info + extra
-        while len(self._chan_info) < 24:
-            self._chan_info.append(0)
-        # print("chan_info_________")
-        # for index, b in enumerate(self._chan_info):
-        #     print("byte " + format(index, '02') + " | " + format(b,'08b'))
-
-    def _get_chan_info_bit(self):
-        bit = self._chan_info[self._byte] >> (7 - self._bit) & 0b1
-        self._bit = (self._bit + 1) % 8
-        if self._bit == 0:
-            self._byte = (self._byte + 1) % len(self._chan_info)
-        return bit
-
-class Chan_samples():
-    """
-    """
-    def __init__(self,
-                 audio_func = None,
-                 validity_flag = None,
-                 user_data = None,
-                 chan_bit = None
-                 ):
-        self._audio = audio_func if audio_func != None else self._audio_func
-        self._previous = None
-        self._validity_flag = validity_flag if validity_flag != None else self._validity_flag
-        self._user_data = user_data if user_data != None else self._user_data
-        self._chan_bit = chan_bit if chan_bit != None else self._chan_bit
-    def check(self, sample):
-        expected = self._chan_bit() << 26
-        expected |= self._user_data() << 25
-        expected |= self._validity_flag() << 24
-        audio = self._audio(self._previous)
-        if audio == None:
-            parity = bin(sample & 0x07FFFFFF).count('1') & 0x1
-            self._previous = sample & 0x00FFFFFF
-            sample &= 0x0F000000
+            #error
+            pass
+        byte += "00"
+        return byte
+    def _get_byte_4(self, bit_depth, original_sam_freq):
+        #there are 2 options for 20bits this needs sorting for tests that involve 20 bit depth
+        byte = ""
+        byte += "1" if bit_depth > 20 else "0"
+        if bit_depth in [20,16]:
+            byte += "100"
+        elif bit_depth in [22,18]:
+            byte += "010"
+        elif bit_depth in [23,19]:
+            byte += "001"
+        elif bit_depth in [24,20]:
+            byte += "101"
+        elif bit_depth in [21,17]:
+            byte += "011"
         else:
-            self._previous = (((1<<24) -1) & audio)  & 0x00FFFFFF
-            expected |= self._previous
-            parity = bin(expected).count('1') & 0x1
-        expected |= parity << 27
+            byte += "000"
 
-        if sample != expected:
-            print("sample   = " +'{:028b}'.format(sample) + "\nexpected = "+'{:028b}'.format(expected))
-            os._exit(os.EX_OK)
-        # else:
-        #     print(self._previous)
-        #     print("sample   = " +'{:028b}'.format(sample) + "\nexpected = "+'{:028b}'.format(expected)+ "\n")
-        return True
-    
-    #these functions are to work around issues with lambda functions and pickling on macOS
-    def _audio_func(self, previous):
-        return None
-    def _validity_flag(self):
-        return 0
-    def _user_data(self):
-        return 0
-    def _chan_bit(self):
-        return 0
+        if original_sam_freq == 0:
+            byte += "0000"
+        else:
+            #error
+            pass
+        return byte
+    def _get_byte_extra(self, extra):
+        byte = ""
+        if extra == None:
+            for _ in range(19):
+                byte += "00000000"
+        else:
+            # error
+            pass
+        return byte
+    def expect(self):
+        pre_char = ["X","Y"]
+        transitions_ok = "1111111111111111111111111111\n"
+        lines = ""
+        for j, _ in enumerate(self._samples[0]):
+            for i, _ in enumerate(self._samples):
+                if i == 0 and j % 192 == 0:
+                    pre = "Z"
+                else:
+                    pre = pre_char[i]
+                subframe = self._samples[i][j]
+                subframe += self._validity_flag[i][j % len(self._validity_flag[i])]
+                subframe += self._user_data[i][j % len(self._user_data[i])]
+                subframe += self._channel_status[i][j % len(self._channel_status[i])]
+                subframe += "1" if subframe.count('1') & 0x1 else "0"
+                lines += sub_frame_string(j, pre, subframe, transitions_ok)
+        return lines
+
+def sub_frame_string(sample_no, preamble, subframe, transitions):
+    return f"{sample_no}[{preamble}] - {subframe} {transitions}"
 
 class Audio_func():
     def __init__(self, type="none", value=0):
