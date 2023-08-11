@@ -9,9 +9,6 @@ PREAMBLE_X = "10010011"
 PREAMBLE_Y = "10010110"
 
 class Clock(SimThread):
-    """
-    
-    """
     def __init__(self,clock_port: str,freq_Hz: int):
         self._running = True
         self._tick = 0
@@ -48,9 +45,6 @@ class Clock(SimThread):
         return interval
 
 class Spdif_rx(Clock):
-    """
-
-    """
     def __init__(self,clock_port: str, spdif_out_port: str, sam_freq: int, mclk_freq: int, samples: int):
         super().__init__(clock_port, mclk_freq)
         self._spdif_out_port = spdif_out_port
@@ -78,8 +72,6 @@ class Spdif_rx(Clock):
         self._div = (self._div +1) % self._divider
 
 class Spdif_tx(Clock):
-    """
-    """
     def __init__(self,clock_port: str, spdif_in_port: str, freq_Hz: int, audio_info, chan_info, polarity):
         super().__init__(clock_port, freq_Hz)
         self._spdif_in_port = spdif_in_port
@@ -141,7 +133,6 @@ class Frames():
                 self._get_byte_4(bit_depth, original_sam_freq) +
                 self._get_byte_extra(extra)
             )
-        # print(self._channel_status)
 
     def _get_byte_0(self, pro, digital_audio,copyright,preEmphasis,mode):
         byte = ""
@@ -158,11 +149,9 @@ class Frames():
             if catagory == "other":
                 byte += "1111"
             else:
-                #error
-                pass
+                raise Exception("Unsupported device catagory, if input is correct please add support to Frames")
         else:
-            #error
-            pass
+            raise Exception("Unsupported device catagory, if input is correct please add support to Frames")
         byte += "1" if L_bit else "0"
         return byte
     def _get_byte_2(self, source_No, channel_No):
@@ -189,13 +178,11 @@ class Frames():
         elif sam_freq == 192000:
             byte = "0111"
         else:
-            #error
-            pass
+            raise Exception("Unsupported Sample rate, if input is correct please add support to Frames")
         if clock_accuracy == "level II":
             byte += "00"
         else:
-            #error
-            pass
+            raise Exception("Unsupported Clock accuracy, if input is correct please add support to Frames")
         byte += "00"
         return byte
     def _get_byte_4(self, bit_depth, original_sam_freq):
@@ -214,12 +201,10 @@ class Frames():
             byte += "011"
         else:
             byte += "000"
-
         if original_sam_freq == 0:
             byte += "0000"
         else:
-            #error
-            pass
+            raise Exception("Unsupported original sample rate, if input is correct please add support to Frames")
         return byte
     def _get_byte_extra(self, extra):
         byte = ""
@@ -227,8 +212,7 @@ class Frames():
             for _ in range(19):
                 byte += "00000000"
         else:
-            # error
-            pass
+            raise Exception("Unsupported extra data, if input is correct please add support to Frames")
         return byte
     def expect(self):
         pre_char = ["X","Y"]
@@ -261,7 +245,7 @@ class Audio_func():
         elif _type == "ramp":
             self.next = self._ramp
         else:
-            raise Exception("audio data type not supported")
+            raise Exception("Unsupported audio data type")
         self._value = value
 
     def _none(self, previous):
