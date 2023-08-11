@@ -33,9 +33,6 @@ xscope.xmt
 *.gtkw
 *.vcd
 
-# Host binaries 
-host_usb_mixer_control/xmos_mixer
-
 # Documentation build
 *.pdf
 
