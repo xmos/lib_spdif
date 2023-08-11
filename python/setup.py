@@ -15,7 +15,6 @@ setuptools.setup(
     install_requires=[
         'flake8~=3.8',
         "pytest~=7.1",
-        "pytest-xdist~=2.3",
     ],
     dependency_links=[
     ],
