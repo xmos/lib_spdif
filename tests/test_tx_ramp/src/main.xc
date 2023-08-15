@@ -4,7 +4,7 @@
 #include <xs1.h>
 #include <platform.h>
 #include <spdif.h>
-#include<stdlib.h>
+#include <stdlib.h>
 
 on tile[1]: out buffered    port:32 p_spdif_tx      = XS1_PORT_1A;
 on tile[1]: in              port    p_mclk_in       = XS1_PORT_1B;

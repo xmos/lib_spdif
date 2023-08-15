@@ -6,6 +6,7 @@ import Pyxsim
 from Pyxsim  import testers
 from pathlib import Path
 from spdif_test_utils import (
+    Clock,
     Spdif_rx,
     Frames,
 )
@@ -38,12 +39,16 @@ def test_spdif_transmit(sam_freq, capfd):
     ]
 
     tester = testers.ComparisonTester(Frames(channels=audio, no_of_samples=no_of_samples, sam_freq=sam_freq).expect())
-    spdif_rx = Spdif_rx(p_clock,p_spdif_out,sam_freq,mclk_freq,no_of_samples)
+    simthreads = [
+        Clock(p_clock,mclk_freq),
+        Spdif_rx(p_spdif_out,sam_freq,no_of_samples),
+    ]
+
     simargs = ["--max-cycles", str(MAX_CYCLES)]
 
     result = Pyxsim.run_on_simulator(
         xe,
-        simthreads=[spdif_rx],
+        simthreads=simthreads,
         instTracing=True,
         clean_before_build=True,
         tester=tester,

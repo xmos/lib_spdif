@@ -7,80 +7,69 @@ import os
 PREAMBLE_Z = "10011100"
 PREAMBLE_X = "10010011"
 PREAMBLE_Y = "10010110"
+TRANSITIONS_OK = "1111111111111111111111111111"
 
 class Clock(SimThread):
-    def __init__(self,clock_port: str,freq_Hz: int):
-        self._running = True
-        self._tick = 0
+    def __init__(self,port: str,freq_Hz: int, polarity = 0):
+        self._pin = polarity
         if (freq_Hz <= 500000000000000):
             self._double_freq_Hz = 2 * freq_Hz
         else:
             raise ValueError("Error: Frequency Unsupported - too high")
         self._interval_carry = 0
-        self._clock_port = clock_port
+        self._port = port
     def run(self):
         time = self.xsi.get_time()
         while True:
             time += self._get_next_interval()
             self.wait_until(time)
-            self._tick = 1 - self._tick
-
-            if self._running:
-                self.xsi.drive_port_pins(self._clock_port, self._tick)
-                if self._tick:
-                    self.on_high()
-                else:
-                    self.on_low()
-
-    # Override these functions to trigger actions on clock high and low
-    def on_high(self):
-        pass
-
-    def on_low(self):
-        pass
+            self._pin = 1 - self._pin
+            self.xsi.drive_port_pins(self._port, self._pin)
 
     def _get_next_interval(self):
         interval = (1000000000000000 + self._interval_carry) // self._double_freq_Hz
         self._interval_carry = (1000000000000000 + self._interval_carry) % self._double_freq_Hz
         return interval
-
+    
 class Spdif_rx(Clock):
-    def __init__(self,clock_port: str, spdif_out_port: str, sam_freq: int, mclk_freq: int, samples: int):
-        super().__init__(clock_port, mclk_freq)
-        self._spdif_out_port = spdif_out_port
-        self._samples = samples
-        self._pin = 0
-        self._in_buff = ""
-        self._state = 0
-        self._divider = int(mclk_freq / (sam_freq * 128))
-        self._div = 0
+    def __init__(self,port: str, sam_freq: int, no_of_samples: int):
+        super().__init__(port, sam_freq * 64)
+        self._no_of_samples = no_of_samples
 
-    def on_high(self):
-        if self._div == 0:
-            pin = self.xsi.sample_port_pins(self._spdif_out_port)
-            self._in_buff = self._in_buff[-63:] + ("1" if self._pin ^ pin else "0")
+    def run(self):
+        time = self.xsi.get_time()
+        sample_counter = 0
+        in_buff = ""
+        while True:
+            time += self._get_next_interval()
+            self.wait_until(time)
+            pin = self.xsi.sample_port_pins(self._port)
+            in_buff = in_buff[-63:] + ("1" if self._pin ^ pin else "0")
             self._pin = pin
-            if self._in_buff[:8] == PREAMBLE_Z:
-                print(str(self._state) + "[Z] - " + self._in_buff[9::2] + " " +self._in_buff[8::2])
-            elif self._in_buff[:8] == PREAMBLE_X:
-                print(str(self._state) + "[X] - " + self._in_buff[9::2] + " " +self._in_buff[8::2])
-            elif self._in_buff[:8] == PREAMBLE_Y:
-                print(str(self._state) + "[Y] - " + self._in_buff[9::2] + " " +self._in_buff[8::2])
-                self._state += 1
-            if self._state >= self._samples:
-                os._exit(os.EX_OK)
-        self._div = (self._div +1) % self._divider
+            if in_buff[:8] in [PREAMBLE_Z, PREAMBLE_X, PREAMBLE_Y]:
+                print(sub_frame_string(sample_counter,in_buff))
+            if in_buff[:8] == PREAMBLE_Y:
+                sample_counter += 1
+                if sample_counter >= self._no_of_samples:
+                    os._exit(os.EX_OK)
+
 
 class Spdif_tx(Clock):
-    def __init__(self,clock_port: str, spdif_in_port: str, freq_Hz: int, audio_info, chan_info, polarity):
-        super().__init__(clock_port, freq_Hz)
+    def __init__(self,clock_port: str, spdif_in_port: str, freq_Hz: int, out: str, polarity=0):
+        super().__init__(clock_port, freq_Hz * 64, polarity=polarity)
         self._spdif_in_port = spdif_in_port
-        self._audio_info = audio_info
-        self._chan_info = chan_info
-    
-    def on_high(self):
-        
-        pass
+        self._out = out
+
+    def run(self):
+        time = self.xsi.get_time()
+
+        while len(self._out) > 0:
+            time += self._get_next_interval()
+            self.wait_until(time)
+            self.xsi.drive_port_pins(self._port, self._pin)
+            self._pin = self._pin if self._out[0] == "0" else 1 - self._pin
+            self._out = self._out[1:]
+
 
 class Frames():
     def __init__(
@@ -110,15 +99,19 @@ class Frames():
         ):
         self._samples = []
         if sources != None:
-            pass
+            data = sources
         elif channels != None:
-            for i, chan in enumerate(channels):
-                self._samples.append([])
-                value = 0
-                audio_func = Audio_func(chan[0],chan[1]).next
-                for _ in range(no_of_samples):
-                    self._samples[i].append("{:024b}".format(((1 << 24) -1) & value)[::-1])
-                    value = audio_func(value)
+            data = channels
+        else:
+            #Error no channels or sources
+            pass
+        for i, chan in enumerate(data):
+            self._samples.append([])
+            value = 0
+            audio_func = Audio_func(chan[0],chan[1]).next
+            for _ in range(no_of_samples):
+                self._samples[i].append("{:024b}".format(((1 << 24) -1) & value)[::-1])
+                value = audio_func(value)
         self._validity_flag = []
         self._user_data = []
         self._channel_status = []
@@ -214,26 +207,36 @@ class Frames():
         else:
             raise Exception("Unsupported extra data, if input is correct please add support to Frames")
         return byte
-    def expect(self):
-        pre_char = ["X","Y"]
-        transitions_ok = "1111111111111111111111111111\n"
-        lines = ""
+    def _construct_out(self):
+        frames = []
         for j, _ in enumerate(self._samples[0]):
             for i, _ in enumerate(self._samples):
                 if i == 0 and j % 192 == 0:
-                    pre = "Z"
+                    pre = PREAMBLE_Z
+                elif i == 0:
+                    pre = PREAMBLE_X
                 else:
-                    pre = pre_char[i]
+                    pre = PREAMBLE_Y
                 subframe = self._samples[i][j]
                 subframe += self._validity_flag[i][j % len(self._validity_flag[i])]
                 subframe += self._user_data[i][j % len(self._user_data[i])]
                 subframe += self._channel_status[i][j % len(self._channel_status[i])]
                 subframe += "1" if subframe.count('1') & 0x1 else "0"
-                lines += sub_frame_string(j, pre, subframe, transitions_ok)
-        return lines
+                frame = pre + ''.join(clock + data for clock,data in zip(TRANSITIONS_OK, subframe))
+                frames.append(frame)
+        return frames
+    
+    def expect(self):
+        return '\n'.join(sub_frame_string(i//len(self._samples),subframe) for i, subframe in enumerate(self._construct_out()))
+    
+    def stream(self):
+        return ''.join(self._construct_out())
 
-def sub_frame_string(sample_no, preamble, subframe, transitions):
-    return f"{sample_no}[{preamble}] - {subframe} {transitions}"
+
+def sub_frame_string(sample_no,subframe):
+    pre = subframe[:8]
+    pre = "Z" if pre == PREAMBLE_Z else "X" if pre == PREAMBLE_X else "Y" if pre == PREAMBLE_Y else pre
+    return str(sample_no) + f"[{pre}] - " + subframe[9::2] + " " +subframe[8::2]
 
 class Audio_func():
     def __init__(self, type="none", value=0):
