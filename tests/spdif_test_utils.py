@@ -8,6 +8,7 @@ PREAMBLE_Z = "10011100"
 PREAMBLE_X = "10010011"
 PREAMBLE_Y = "10010110"
 TRANSITIONS_OK = "1111111111111111111111111111"
+TEST_SUBFRAME = PREAMBLE_Y + TRANSITIONS_OK + TRANSITIONS_OK
 
 class Clock(SimThread):
     def __init__(self,port: str,freq_Hz: int, polarity = 0):
@@ -55,20 +56,43 @@ class Spdif_rx(Clock):
 
 
 class Spdif_tx(Clock):
-    def __init__(self,clock_port: str, spdif_in_port: str, freq_Hz: int, out: str, polarity=0):
-        super().__init__(clock_port, freq_Hz * 64, polarity=polarity)
+    def __init__(self,spdif_in_port: str, debug_port_high: str,debug_port_low: str, freq_Hz: int, out: str, polarity=0):
+        super().__init__(spdif_in_port, freq_Hz * 64, polarity=polarity)
         self._spdif_in_port = spdif_in_port
-        self._out = out
+        self._debug_port_high = debug_port_high
+        self._debug_port_low = debug_port_low
+        self._out = out+ [TEST_SUBFRAME]
 
     def run(self):
         time = self.xsi.get_time()
-
-        while len(self._out) > 0:
-            time += self._get_next_interval()
-            self.wait_until(time)
-            self.xsi.drive_port_pins(self._port, self._pin)
-            self._pin = self._pin if self._out[0] == "0" else 1 - self._pin
-            self._out = self._out[1:]
+        debug = None
+        startup = int("11111111111111111111111111110101",2)
+        while debug != startup:
+            for i, value in enumerate(TEST_SUBFRAME):
+                time += self._get_next_interval()
+                self.wait_until(time)
+                self.xsi.drive_port_pins(self._port, self._pin)
+                self._pin = self._pin if value == "0" else 1 - self._pin
+                if i == 60:
+                    debug = self.xsi.sample_port_pins(self._debug_port_high)<<16 | self.xsi.sample_port_pins(self._debug_port_low)
+                    
+        for j, sub_frame in enumerate(self._out):
+            for i, value in enumerate(sub_frame):
+                time += self._get_next_interval()
+                self.wait_until(time)
+                self.xsi.drive_port_pins(self._port, self._pin)
+                self._pin = self._pin if value == "0" else 1 - self._pin
+                # log the debug port just before completing a subframe to give the best chance
+                # for it to be filled
+                if j > 0 and i == 60:  
+                    debug = self.xsi.sample_port_pins(self._debug_port_high)<<16 | self.xsi.sample_port_pins(self._debug_port_low)
+                    # print(f"python {debug}")
+                    pre = debug & 0xF
+                    sample = debug << 4
+                    pre = "Z" if pre == 3 else "X" if pre == 9 else "Y" if pre == 5 else "{0:04b}".format(pre)
+                    sample = "{0:032b}".format(debug)
+                    print(f"{(j-1)//2} [{pre}] - {sample[-5::-1]} {TRANSITIONS_OK}")
+        os._exit(os.EX_OK)
 
 
 class Frames():
@@ -230,13 +254,13 @@ class Frames():
         return '\n'.join(sub_frame_string(i//len(self._samples),subframe) for i, subframe in enumerate(self._construct_out()))
     
     def stream(self):
-        return ''.join(self._construct_out())
+        return self._construct_out()
 
 
 def sub_frame_string(sample_no,subframe):
     pre = subframe[:8]
     pre = "Z" if pre == PREAMBLE_Z else "X" if pre == PREAMBLE_X else "Y" if pre == PREAMBLE_Y else pre
-    return str(sample_no) + f"[{pre}] - " + subframe[9::2] + " " +subframe[8::2]
+    return f"{sample_no} [{pre}] - {subframe[9::2]} {subframe[8::2]}"
 
 class Audio_func():
     def __init__(self, type="none", value=0):

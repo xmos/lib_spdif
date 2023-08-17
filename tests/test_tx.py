@@ -25,9 +25,9 @@ def _get_mclk_freq(sam_freq):
         assert False
 
 @pytest.mark.parametrize("sam_freq", [44100,48000,88200,96000,176400,192000])
-def test_spdif_transmit(sam_freq, capfd):
+def test_spdif_tx(sam_freq, capfd):
 
-    xe = str(Path(__file__).parent / 'test_tx_ramp/bin/test_tx_ramp.xe')
+    xe = str(Path(__file__).parent / 'test_tx/bin/test_tx.xe')
     p_clock     = "tile[1]:XS1_PORT_1B"
     p_spdif_out = "tile[1]:XS1_PORT_1A"
     no_of_samples = _get_duration()

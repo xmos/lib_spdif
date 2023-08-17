@@ -52,9 +52,6 @@ int main(void) {
     chan c_spdif;
     par
     {
-        on tile[0]: {
-            while(1) {};
-        }
         on tile[1]: {
             spdif_tx_port_config(p_spdif_tx, clk_audio, p_mclk_in, 7);
             start_clock(clk_audio);
