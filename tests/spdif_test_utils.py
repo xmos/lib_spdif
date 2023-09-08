@@ -13,10 +13,7 @@ TEST_SUBFRAME = PREAMBLE_Y + TRANSITIONS_OK + TRANSITIONS_OK
 class Clock(SimThread):
     def __init__(self,port: str,freq_Hz: int, polarity = 0):
         self._pin = polarity
-        if (freq_Hz <= 500000000000000):
-            self._double_freq_Hz = 2 * freq_Hz
-        else:
-            raise ValueError("Error: Frequency Unsupported - too high")
+        self._freq_Hz = freq_Hz
         self._interval_carry = 0
         self._port = port
     def run(self):
@@ -28,13 +25,14 @@ class Clock(SimThread):
             self.xsi.drive_port_pins(self._port, self._pin)
 
     def _get_next_interval(self):
-        interval = (1000000000000000 + self._interval_carry) // self._double_freq_Hz
-        self._interval_carry = (1000000000000000 + self._interval_carry) % self._double_freq_Hz
+        tick = self.xsi._xsi._time_step * self.xsi._xsi.xe.freq * 1000000 #Hz from MHz
+        interval = (tick + self._interval_carry) // self._freq_Hz
+        self._interval_carry = (tick + self._interval_carry) % self._freq_Hz
         return interval
-    
+
 class Spdif_rx(Clock):
     def __init__(self,port: str, sam_freq: int, no_of_samples: int):
-        super().__init__(port, sam_freq * 64)
+        super().__init__(port, sam_freq)
         self._no_of_samples = no_of_samples
 
     def run(self):
@@ -54,46 +52,49 @@ class Spdif_rx(Clock):
                 if sample_counter >= self._no_of_samples:
                     os._exit(os.EX_OK)
 
+class Port_monitor(SimThread):
+    def __init__(self, p_debug: str, p_debug_strobe: str, no_of_samples: int):
+        self._p_debug = p_debug
+        self._p_debug_strobe = p_debug_strobe
+        self._no_of_samples = no_of_samples *2 #should be * number of channels
+
+    def run(self):
+        found = 0
+        while (found < self._no_of_samples):
+            self.wait_for_port_pins_change([self._p_debug_strobe])
+            if self.xsi.sample_port_pins(self._p_debug_strobe) == 1:
+                debug = self.xsi.sample_port_pins(self._p_debug)
+                pre = debug & 0xF
+                sample = debug << 4
+                pre = "Z" if pre == 3 else "X" if pre == 9 else "Y" if pre == 5 else "{0:04b}".format(pre)
+                if found or pre == "Z":
+                    sample = "{0:032b}".format(debug)[::-1]
+                    print(f"{(found)//2} [{pre}] - {sample[4::]} {TRANSITIONS_OK}")
+                    found += 1
+        os._exit(os.EX_OK)
+
+    def check(self):
+        return False
+    def check_value(self):
+        return None
 
 class Spdif_tx(Clock):
-    def __init__(self,spdif_in_port: str, debug_port_high: str,debug_port_low: str, freq_Hz: int, out: str, polarity=0):
-        super().__init__(spdif_in_port, freq_Hz * 64, polarity=polarity)
-        self._spdif_in_port = spdif_in_port
-        self._debug_port_high = debug_port_high
-        self._debug_port_low = debug_port_low
-        self._out = out+ [TEST_SUBFRAME]
+    def __init__(self, port: str, freq_Hz: int, out: bytearray, trigger=None, polarity=0):
+        super().__init__(port, freq_Hz, polarity)
+        self._bytes = out
+        self._trigger = trigger
 
     def run(self):
         time = self.xsi.get_time()
-        debug = None
-        startup = int("11111111111111111111111111110101",2)
-        while debug != startup:
-            for i, value in enumerate(TEST_SUBFRAME):
-                time += self._get_next_interval()
-                self.wait_until(time)
-                self.xsi.drive_port_pins(self._port, self._pin)
-                self._pin = self._pin if value == "0" else 1 - self._pin
-                if i == 60:
-                    debug = self.xsi.sample_port_pins(self._debug_port_high)<<16 | self.xsi.sample_port_pins(self._debug_port_low)
-                    
-        for j, sub_frame in enumerate(self._out):
-            for i, value in enumerate(sub_frame):
-                time += self._get_next_interval()
-                self.wait_until(time)
-                self.xsi.drive_port_pins(self._port, self._pin)
-                self._pin = self._pin if value == "0" else 1 - self._pin
-                # log the debug port just before completing a subframe to give the best chance
-                # for it to be filled
-                if j > 0 and i == 60:  
-                    debug = self.xsi.sample_port_pins(self._debug_port_high)<<16 | self.xsi.sample_port_pins(self._debug_port_low)
-                    # print(f"python {debug}")
-                    pre = debug & 0xF
-                    sample = debug << 4
-                    pre = "Z" if pre == 3 else "X" if pre == 9 else "Y" if pre == 5 else "{0:04b}".format(pre)
-                    sample = "{0:032b}".format(debug)
-                    print(f"{(j-1)//2} [{pre}] - {sample[-5::-1]} {TRANSITIONS_OK}")
-        os._exit(os.EX_OK)
+        while self._trigger != None and not self._trigger.check():
 
+            pass
+        for byte in self._bytes:
+            for i in range(8):
+                time += self._get_next_interval()
+                self.wait_until(time)
+                bit = (byte >> i) & 0x1
+                self.xsi.drive_port_pins(self._port, bit)
 
 class Frames():
     def __init__(
@@ -121,15 +122,18 @@ class Frames():
             #byte 5-23
             extra=None, # List of bytes
         ):
+        # self.expect = ""
+        self._no_of_samples = no_of_samples
         self._samples = []
+        self._initial_values = []
         if sources != None:
-            data = sources
+            self._audio = sources
         elif channels != None:
-            data = channels
+            self._audio = channels
         else:
             #Error no channels or sources
             pass
-        for i, chan in enumerate(data):
+        for i, chan in enumerate(self._audio):
             self._samples.append([])
             value = 0
             audio_func = Audio_func(chan[0],chan[1]).next
@@ -231,6 +235,19 @@ class Frames():
         else:
             raise Exception("Unsupported extra data, if input is correct please add support to Frames")
         return byte
+    def _log_initial_value(self, value):
+        self._initial_values.append(value)
+        if len(self._initial_values) == len(self._audio):
+            for i, chan in enumerate(self._audio):
+                self._samples.append([])
+                value = self._initial_values[i]
+                audio_func = Audio_func(chan[0],chan[1]).next
+                for _ in range(self._no_of_samples):
+                    self._samples[i].append("{:024b}".format(((1 << 24) -1) & value)[::-1])
+                    value = audio_func(value)
+            return True
+        return False
+
     def _construct_out(self):
         frames = []
         for j, _ in enumerate(self._samples[0]):
@@ -253,9 +270,24 @@ class Frames():
     def expect(self):
         return '\n'.join(sub_frame_string(i//len(self._samples),subframe) for i, subframe in enumerate(self._construct_out()))
     
-    def stream(self):
-        return self._construct_out()
-
+    def stream(self, buffer_count=0, polarity=0):
+        lines = self._construct_out()
+        stream = b''
+        for line in lines:
+            byte = 0
+            for bit in line[::-1]:
+                bit = (byte & 0x1) if bit == "0" else 1 - (byte & 0x1)
+                byte = (byte << 1) | bit
+            stream += byte.to_bytes(8, "little")
+        # repeat the final sub frame a few times at the start to allow the receiver to lock
+        for _ in range(buffer_count):
+            byte = 0
+            for bit in lines[-1][::-1]:
+                
+                bit = (byte & 0x1) if bit == "0" else 1 - (byte & 0x1)
+                byte = (byte << 1) | bit
+            stream = byte.to_bytes(8, "little") + stream
+        return stream
 
 def sub_frame_string(sample_no,subframe):
     pre = subframe[:8]
@@ -283,3 +315,9 @@ class Audio_func():
 
     def _ramp(self, previous):
         return (previous + self._value) if previous != None else None
+
+def freq_for_sample_rate(sam_freq: int):
+    freq_Hz = None
+    if sam_freq in [44100, 48000, 88200, 96000, 176400, 192000]:
+        freq_Hz = sam_freq * 128
+    return freq_Hz
