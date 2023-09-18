@@ -65,7 +65,7 @@ void generate_samples(chanend c) {
     }
 }
 
-// Set secondary (App) PLL control register safely to work around chip bug.
+// Set secondary (App) PLL control register
 void set_app_pll_init (tileref tile, int app_pll_ctl)
 {
     // delay_microseconds(500);
