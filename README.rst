@@ -1,8 +1,9 @@
 S/PDIF library
 ##############
 
-:Version: 5.0.0
+:Version: 5.0.1
 :Vendor: XMOS
+
 
 :scope: General Use
 

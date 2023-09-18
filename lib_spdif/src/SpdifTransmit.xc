@@ -288,7 +288,7 @@ void spdif_tx(buffered out port:32 p, chanend c_in)
         /* Calculate required divide */
         divide = mclkFreq / (samFreq * 2 * 32 * 2);
 
-        if((divide < 1) || (divide > 4)) 
+        if((divide < 1) || (divide > 4))
             error++;
 
         if(error)
