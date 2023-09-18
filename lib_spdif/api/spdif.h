@@ -1,10 +1,26 @@
 // Copyright 2014-2023 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
-#ifndef SPDIF_H_
-#define SPDIF_H_
+#ifndef _SPDIF_H_
+#define _SPDIF_H_
 #include <stdint.h>
 #include <stddef.h>
 #include <xs1.h>
+
+#if 1
+#define SPDIF_RX_PREAMBLE_MASK  (0xC)
+
+#define SPDIF_FRAME_X           (0xC)
+#define SPDIF_FRAME_Y           (0x0)
+#define SPDIF_FRAME_Z           (0x8)
+
+#define SPDIF_IS_FRAME_X(x) ((x & SPDIF_RX_PREAMBLE_MASK) == SPDIF_FRAME_X)
+#define SPDIF_IS_FRAME_Y(x) ((x & SPDIF_RX_PREAMBLE_MASK) == SPDIF_FRAME_Y)
+#define SPDIF_IS_FRAME_Z(x) ((x & SPDIF_RX_PREAMBLE_MASK) == SPDIF_FRAME_Z)
+
+#define SPDIF_RX_EXTRACT_SAMPLE(x) ((x & 0xFFFFFFF0) << 4)
+
+#else
+#define SPDIF_RX_PREAMBLE_MASK   (0xF)
 
 /** This constant defines the four least-significant bits of the first
  * sample of a frame (typically a sample from the left channel)
@@ -22,6 +38,7 @@
  * channel)
  */
 #define SPDIF_FRAME_Z 3
+#endif
 
 /** S/PDIF receive function.
  *
@@ -33,16 +50,15 @@
  * encounters a short series of 0-1 transitions it will increase its internal
  * divider. This means that is will lock to the incoming sample rate.
  *
- * \param p_spdif         S/PDIF input port.
+ * \param p               S/PDIF input port.
  *
  * \param c               channel to connect to the application.
  *
  * \param clk             A clock block used internally to clock data.
  *
- * \param sample_freq_estimate The initial expected sample rate (in Hz).
- *
  **/
-void spdif_rx(streaming chanend c, in port p_spdif, clock clk, unsigned sample_freq_estimate);
+//void spdif_rx(streaming chanend c, in port p_spdif, clock clk, unsigned sample_freq_estimate);
+void spdif_rx(streaming chanend c, buffered in port:32 p, clock clk);
 
 /** Receive a sample from the S/PDIF component.
  *
@@ -79,6 +95,20 @@ void spdif_receive_sample(streaming chanend c, int32_t &sample, size_t &index);
  *   \param c       chanend connected to the S/PDIF receiver component
  */
 void spdif_receive_shutdown(streaming chanend c);
+
+/** Checks the parity of a received S/PDIF sample
+ *
+ * \param sample    Received sample to be checked
+ *
+ * \return          0 for good parity, non-zero for bad parity
+ *
+ */
+static inline int spdif_check_parity(unsigned sample)
+{
+    unsigned x = (sample>>4);
+    crc32(x, 0, 1);
+    return x & 1;
+}
 
 /** S/PDIF transmit configure port function
  *
@@ -141,4 +171,4 @@ void spdif_tx_reconfigure_sample_rate(chanend c_spdif_tx,
  */
 void spdif_tx_output(chanend c_spdif_tx, unsigned lsample, unsigned rsample);
 
-#endif /* SPDIF_H_ */
+#endif /* _SPDIF_H_ */
