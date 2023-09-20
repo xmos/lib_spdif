@@ -6,20 +6,12 @@
 #include <stddef.h>
 #include <xs1.h>
 
-#if 1
-#define SPDIF_RX_PREAMBLE_MASK  (0xC)
+#ifndef LEGACY_SPDIF_RECEIVER
+#define LEFACY_SPDIF_RECEIVER    (0)
+#endif
 
-#define SPDIF_FRAME_X           (0xC)
-#define SPDIF_FRAME_Y           (0x0)
-#define SPDIF_FRAME_Z           (0x8)
+#if (LEGACY_SPDIF_RECEIVER)
 
-#define SPDIF_IS_FRAME_X(x) ((x & SPDIF_RX_PREAMBLE_MASK) == SPDIF_FRAME_X)
-#define SPDIF_IS_FRAME_Y(x) ((x & SPDIF_RX_PREAMBLE_MASK) == SPDIF_FRAME_Y)
-#define SPDIF_IS_FRAME_Z(x) ((x & SPDIF_RX_PREAMBLE_MASK) == SPDIF_FRAME_Z)
-
-#define SPDIF_RX_EXTRACT_SAMPLE(x) ((x & 0xFFFFFFF0) << 4)
-
-#else
 #define SPDIF_RX_PREAMBLE_MASK   (0xF)
 
 /** This constant defines the four least-significant bits of the first
@@ -38,27 +30,44 @@
  * channel)
  */
 #define SPDIF_FRAME_Z 3
+
+#else
+
+#define SPDIF_RX_PREAMBLE_MASK  (0xC)
+
+#define SPDIF_FRAME_X           (0xC)
+#define SPDIF_FRAME_Y           (0x0)
+#define SPDIF_FRAME_Z           (0x8)
+
+#define SPDIF_IS_FRAME_X(x) ((x & SPDIF_RX_PREAMBLE_MASK) == SPDIF_FRAME_X)
+#define SPDIF_IS_FRAME_Y(x) ((x & SPDIF_RX_PREAMBLE_MASK) == SPDIF_FRAME_Y)
+#define SPDIF_IS_FRAME_Z(x) ((x & SPDIF_RX_PREAMBLE_MASK) == SPDIF_FRAME_Z)
+
+#define SPDIF_RX_EXTRACT_SAMPLE(x) ((x & 0xFFFFFFF0) << 4)
+
 #endif
 
 /** S/PDIF receive function.
  *
  * This function provides an S/PDIF receiver component.
- * It is capable of 11025, 12000, 22050, 24000,
- * 44100, 48000, 88200 and 96000 Hz sample rates.
- * When the decoder
- * encounters a long series of zeros it will lower its inernal divider; when it
- * encounters a short series of 0-1 transitions it will increase its internal
- * divider. This means that is will lock to the incoming sample rate.
+ * It is capable of receiving 44100, 48000, 88200, 96000, 176400 and 192000 Hz sample rates.
  *
- * \param p               S/PDIF input port.
+ * The receiver will modifiy the divider of the clock-block to lock to the incoming sample rate.
  *
- * \param c               channel to connect to the application.
+ * \param p                      S/PDIF input port.
  *
- * \param clk             A clock block used internally to clock data.
+ * \param c                      Channel to connect to the application.
+ *
+ * \param clk                    A clock block used internally to clock data.
+ *
+ * \param sample_freq_estimate   The initial expected sample rate (in Hz).
  *
  **/
-//void spdif_rx(streaming chanend c, in port p_spdif, clock clk, unsigned sample_freq_estimate);
-void spdif_rx(streaming chanend c, buffered in port:32 p, clock clk);
+#if (LEGACY_SPDIF_RECEIVER)
+void spdif_rx(streaming chanend c, in port p_spdif, clock clk, unsigned sample_freq_estimate);
+#else
+void spdif_rx(streaming chanend c, buffered in port:32 p, clock clk, unsigned sample_freq_estimate);
+#endif
 
 /** Receive a sample from the S/PDIF component.
  *
