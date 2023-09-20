@@ -53,13 +53,17 @@ class Spdif_rx(Clock):
                     os._exit(os.EX_OK)
 
 class Port_monitor(SimThread):
-    def __init__(self, p_debug: str, p_debug_strobe: str, no_of_samples: int):
+    def __init__(self, p_debug: str, p_debug_strobe: str, no_of_samples: int,print_frame=True, check_frames=None):
         self._p_debug = p_debug
         self._p_debug_strobe = p_debug_strobe
         self._no_of_samples = no_of_samples *2 #should be * number of channels
+        self._print_frame = print_frame
+        self._check_frames = check_frames
 
     def run(self):
         found = 0
+        frames = []
+        init_values = (self._check_frames == None)
         while (found < self._no_of_samples):
             self.wait_for_port_pins_change([self._p_debug_strobe])
             if self.xsi.sample_port_pins(self._p_debug_strobe) == 1:
@@ -69,8 +73,24 @@ class Port_monitor(SimThread):
                 pre = "Z" if pre == 3 else "X" if pre == 9 else "Y" if pre == 5 else "{0:04b}".format(pre)
                 if found or pre == "Z":
                     sample = "{0:032b}".format(debug)[::-1]
-                    print(f"{(found)//2} [{pre}] - {sample[4::]} {TRANSITIONS_OK}")
+                    frames.append(f"{(found)//2} [{pre}] - {sample[4::]} {TRANSITIONS_OK}")
+                    if not init_values:
+                        init_values = self._check_frames.log_initial_value((debug & 0x0FFFFFF0) >> 4)
                     found += 1
+        if self._print_frame:
+            print('\n'.join(frames))
+        if self._check_frames != None:
+            expect = self._check_frames.expect().split("\n")
+            fail = False
+            for i in range(max(len(frames), len(expect))):
+                expected = "-" if i >= len(expect) else expect[i]
+                sub_frame = "-" if i >= len(frames) else frames[i]
+                if sub_frame != expected:
+                    print(f"Expected: {expected} \nSeen:     {sub_frame}")
+                    fail = True
+            if not fail:
+                print("PASS")
+               
         os._exit(os.EX_OK)
 
     def check(self):
@@ -124,7 +144,7 @@ class Frames():
         ):
         # self.expect = ""
         self._no_of_samples = no_of_samples
-        self._samples = []
+        self._samples = None
         self._initial_values = []
         if sources != None:
             self._audio = sources
@@ -133,17 +153,10 @@ class Frames():
         else:
             #Error no channels or sources
             pass
-        for i, chan in enumerate(self._audio):
-            self._samples.append([])
-            value = 0
-            audio_func = Audio_func(chan[0],chan[1]).next
-            for _ in range(no_of_samples):
-                self._samples[i].append("{:024b}".format(((1 << 24) -1) & value)[::-1])
-                value = audio_func(value)
         self._validity_flag = []
         self._user_data = []
         self._channel_status = []
-        for i, _ in enumerate(self._samples):
+        for i, _ in enumerate(self._audio):
             self._validity_flag.append("0")
             self._user_data.append("0")
             self._channel_status.append(
@@ -235,21 +248,24 @@ class Frames():
         else:
             raise Exception("Unsupported extra data, if input is correct please add support to Frames")
         return byte
-    def _log_initial_value(self, value):
-        self._initial_values.append(value)
-        if len(self._initial_values) == len(self._audio):
-            for i, chan in enumerate(self._audio):
-                self._samples.append([])
-                value = self._initial_values[i]
-                audio_func = Audio_func(chan[0],chan[1]).next
-                for _ in range(self._no_of_samples):
-                    self._samples[i].append("{:024b}".format(((1 << 24) -1) & value)[::-1])
-                    value = audio_func(value)
-            return True
-        return False
+    def log_initial_value(self, value):
+        if len(self._initial_values) < len(self._audio):
+            self._initial_values.append(value)
+        return len(self._initial_values) == len(self._audio)
 
     def _construct_out(self):
         frames = []
+        while (len(self._initial_values) < len(self._audio)):
+            self._initial_values.append(0)
+        if self._samples == None:
+            self._samples = []
+            for i, chan in enumerate(self._audio):
+                    self._samples.append([])
+                    value = self._initial_values[i]
+                    audio_func = Audio_func(chan[0],chan[1]).next
+                    for _ in range(self._no_of_samples):
+                        self._samples[i].append("{:024b}".format(((1 << 24) -1) & value)[::-1])
+                        value = audio_func(value)
         for j, _ in enumerate(self._samples[0]):
             for i, _ in enumerate(self._samples):
                 if i == 0 and j % 192 == 0:
@@ -279,14 +295,14 @@ class Frames():
                 bit = (byte & 0x1) if bit == "0" else 1 - (byte & 0x1)
                 byte = (byte << 1) | bit
             stream += byte.to_bytes(8, "little")
-        # repeat the final sub frame a few times at the start to allow the receiver to lock
+        # repeat the final subframe a few times at the start to allow the receiver to lock and at the end to allow the receiver to clear the final subframe
         for _ in range(buffer_count):
             byte = 0
             for bit in lines[-1][::-1]:
                 
                 bit = (byte & 0x1) if bit == "0" else 1 - (byte & 0x1)
                 byte = (byte << 1) | bit
-            stream = byte.to_bytes(8, "little") + stream
+            stream = byte.to_bytes(8, "little") + stream + byte.to_bytes(8, "little")
         return stream
 
 def sub_frame_string(sample_no,subframe):
@@ -315,6 +331,13 @@ class Audio_func():
 
     def _ramp(self, previous):
         return (previous + self._value) if previous != None else None
+
+class Recorded_stream():
+    def __init__(self, file_name, audio, sam_freq, sample_rate):
+        self.file_name = file_name
+        self.audio = audio
+        self.sam_freq = sam_freq
+        self.sample_rate = sample_rate
 
 def freq_for_sample_rate(sam_freq: int):
     freq_Hz = None
