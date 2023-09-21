@@ -3,6 +3,7 @@
 #include <xs1.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <xclib.h>
 
 #include "spdif.h"
 
