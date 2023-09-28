@@ -23,7 +23,13 @@ static inline int cls(int idata)
 static inline int xor4(int idata1, int idata2, int idata3, int idata4)
 {
     int x;
+
+#if !defined(__XS3A__) || !defined(__XS2A__)
+    /* For doc build only */
+    x = idata1 ^ idata2 ^ idata3 ^ idata4;
+#else
     asm volatile("xor4 %0, %1, %2, %3, %4" : "=r"(x)  : "r"(idata1), "r"(idata2), "r"(idata3), "r"(idata4));
+#endif
     return x;
 }
 

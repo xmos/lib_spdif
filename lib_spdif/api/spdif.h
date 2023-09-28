@@ -73,7 +73,7 @@
  * \param sample_freq_estimate   The initial expected sample rate (in Hz).
  *
  **/
-void spdif_rx(streaming chanend c, in port p_spdif, clock clk, unsigned sample_freq_estimate);
+void spdif_rx(streaming chanend c, in port p, clock clk, unsigned sample_freq_estimate);
 
 /** Receive a sample from the S/PDIF component.
  *
