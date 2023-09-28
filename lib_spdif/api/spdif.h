@@ -7,45 +7,55 @@
 #include <xs1.h>
 
 #ifndef LEGACY_SPDIF_RECEIVER
-#define LEFACY_SPDIF_RECEIVER    (0)
+#define LEGACY_SPDIF_RECEIVER    (0)
 #endif
 
-#if (LEGACY_SPDIF_RECEIVER)
 
+/** This constant provides a mask for the bits that should be used when
+ * inspecting the preamble of a sample
+ */
+#if (LEGACY_SPDIF_RECEIVER)
 #define SPDIF_RX_PREAMBLE_MASK   (0xF)
+#else
+#define SPDIF_RX_PREAMBLE_MASK   (0xC)
+#endif
 
 /** This constant defines the four least-significant bits of the first
  * sample of a frame (typically a sample from the left channel)
  */
-#define SPDIF_FRAME_X 9
+#if (LEGACY_SPDIF_RECEIVER)
+#define SPDIF_FRAME_X            (0x9)
+#else
+#define SPDIF_FRAME_X            (0xC)
+#endif
 
 /** This constant defines the four least-significant bits of the second or
  * later sample of a frame (typically a sample from the right channel,
  * unless there are more than two channels)
  */
-#define SPDIF_FRAME_Y 5
+#if (LEGACY_SPDIF_RECEIVER)
+#define SPDIF_FRAME_Y            (0x5)
+#else
+#define SPDIF_FRAME_Y            (0x0)
+#endif
 
 /** This constant defines the four least-significant bits of the first
  * sample of the first frame of a block (typically a sample from the left
  * channel)
  */
-#define SPDIF_FRAME_Z 3
-
+#if (LEGACY_SPDIF_RECEIVER)
+#define SPDIF_FRAME_Z            (0x3)
 #else
+#define SPDIF_FRAME_Z            (0x8)
+#endif
 
-#define SPDIF_RX_PREAMBLE_MASK  (0xC)
-
-#define SPDIF_FRAME_X           (0xC)
-#define SPDIF_FRAME_Y           (0x0)
-#define SPDIF_FRAME_Z           (0x8)
-
+/* Helper macros for inspecting preambles */
 #define SPDIF_IS_FRAME_X(x) ((x & SPDIF_RX_PREAMBLE_MASK) == SPDIF_FRAME_X)
 #define SPDIF_IS_FRAME_Y(x) ((x & SPDIF_RX_PREAMBLE_MASK) == SPDIF_FRAME_Y)
 #define SPDIF_IS_FRAME_Z(x) ((x & SPDIF_RX_PREAMBLE_MASK) == SPDIF_FRAME_Z)
 
+/* Helper macro for extracting sample bits from received S/PDIF subframe */
 #define SPDIF_RX_EXTRACT_SAMPLE(x) ((x & 0xFFFFFFF0) << 4)
-
-#endif
 
 /** S/PDIF receive function.
  *
