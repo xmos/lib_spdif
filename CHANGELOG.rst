@@ -1,6 +1,12 @@
 lib_spdif Change Log
 ====================
 
+HEAD
+----
+
+  * CHANGED:   Receiver rearchitected for improved performance
+
+
 5.0.1
 -----
 

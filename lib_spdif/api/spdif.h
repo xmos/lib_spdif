@@ -1,48 +1,79 @@
 // Copyright 2014-2023 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
-#ifndef SPDIF_H_
-#define SPDIF_H_
+#ifndef _SPDIF_H_
+#define _SPDIF_H_
 #include <stdint.h>
 #include <stddef.h>
 #include <xs1.h>
 
+#ifndef LEGACY_SPDIF_RECEIVER
+#define LEGACY_SPDIF_RECEIVER    (0)
+#endif
+
+
+/** This constant provides a mask for the bits that should be used when
+ * inspecting the preamble of a sample
+ */
+#if (LEGACY_SPDIF_RECEIVER)
+#define SPDIF_RX_PREAMBLE_MASK   (0xF)
+#else
+#define SPDIF_RX_PREAMBLE_MASK   (0xC)
+#endif
+
 /** This constant defines the four least-significant bits of the first
  * sample of a frame (typically a sample from the left channel)
  */
-#define SPDIF_FRAME_X 9
+#if (LEGACY_SPDIF_RECEIVER)
+#define SPDIF_FRAME_X            (0x9)
+#else
+#define SPDIF_FRAME_X            (0xC)
+#endif
 
 /** This constant defines the four least-significant bits of the second or
  * later sample of a frame (typically a sample from the right channel,
  * unless there are more than two channels)
  */
-#define SPDIF_FRAME_Y 5
+#if (LEGACY_SPDIF_RECEIVER)
+#define SPDIF_FRAME_Y            (0x5)
+#else
+#define SPDIF_FRAME_Y            (0x0)
+#endif
 
 /** This constant defines the four least-significant bits of the first
  * sample of the first frame of a block (typically a sample from the left
  * channel)
  */
-#define SPDIF_FRAME_Z 3
+#if (LEGACY_SPDIF_RECEIVER)
+#define SPDIF_FRAME_Z            (0x3)
+#else
+#define SPDIF_FRAME_Z            (0x8)
+#endif
+
+/* Helper macros for inspecting preambles */
+#define SPDIF_IS_FRAME_X(x) ((x & SPDIF_RX_PREAMBLE_MASK) == SPDIF_FRAME_X)
+#define SPDIF_IS_FRAME_Y(x) ((x & SPDIF_RX_PREAMBLE_MASK) == SPDIF_FRAME_Y)
+#define SPDIF_IS_FRAME_Z(x) ((x & SPDIF_RX_PREAMBLE_MASK) == SPDIF_FRAME_Z)
+
+/* Helper macro for extracting sample bits from received S/PDIF subframe */
+#define SPDIF_RX_EXTRACT_SAMPLE(x) ((x & 0xFFFFFFF0) << 4)
 
 /** S/PDIF receive function.
  *
  * This function provides an S/PDIF receiver component.
- * It is capable of 11025, 12000, 22050, 24000,
- * 44100, 48000, 88200 and 96000 Hz sample rates.
- * When the decoder
- * encounters a long series of zeros it will lower its inernal divider; when it
- * encounters a short series of 0-1 transitions it will increase its internal
- * divider. This means that is will lock to the incoming sample rate.
+ * It is capable of receiving 44100, 48000, 88200, 96000, 176400 and 192000 Hz sample rates.
  *
- * \param p_spdif         S/PDIF input port.
+ * The receiver will modifiy the divider of the clock-block to lock to the incoming sample rate.
  *
- * \param c               channel to connect to the application.
+ * \param p                      S/PDIF input port.
  *
- * \param clk             A clock block used internally to clock data.
+ * \param c                      Channel to connect to the application.
  *
- * \param sample_freq_estimate The initial expected sample rate (in Hz).
+ * \param clk                    A clock block used internally to clock data.
+ *
+ * \param sample_freq_estimate   The initial expected sample rate (in Hz).
  *
  **/
-void spdif_rx(streaming chanend c, in port p_spdif, clock clk, unsigned sample_freq_estimate);
+void spdif_rx(streaming chanend c, in port p, clock clk, unsigned sample_freq_estimate);
 
 /** Receive a sample from the S/PDIF component.
  *
@@ -79,6 +110,20 @@ void spdif_receive_sample(streaming chanend c, int32_t &sample, size_t &index);
  *   \param c       chanend connected to the S/PDIF receiver component
  */
 void spdif_receive_shutdown(streaming chanend c);
+
+/** Checks the parity of a received S/PDIF sample
+ *
+ * \param sample    Received sample to be checked
+ *
+ * \return          0 for good parity, non-zero for bad parity
+ *
+ */
+static inline int spdif_check_parity(unsigned sample)
+{
+    unsigned x = (sample>>4);
+    crc32(x, 0, 1);
+    return x & 1;
+}
 
 /** S/PDIF transmit configure port function
  *
@@ -141,4 +186,4 @@ void spdif_tx_reconfigure_sample_rate(chanend c_spdif_tx,
  */
 void spdif_tx_output(chanend c_spdif_tx, unsigned lsample, unsigned rsample);
 
-#endif /* SPDIF_H_ */
+#endif /* _SPDIF_H_ */
