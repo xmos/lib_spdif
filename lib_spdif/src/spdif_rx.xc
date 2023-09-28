@@ -12,7 +12,7 @@ void spdif_receive_sample(streaming chanend c, int32_t &sample, size_t &index)
     uint32_t v;
     c :> v;
     index = (v & SPDIF_RX_PREAMBLE_MASK) == SPDIF_FRAME_Y ? 1 : 0;
-    sample = (v & ~SPDIF_RX_PREAMBLE_MASK) << 4;
+    sample = SPDIF_RX_EXTRACT_SAMPLE(v);
 }
 
 #if (LEGACY_SPDIF_RECEIVER)
