@@ -23,7 +23,7 @@ void spdif_rx(streaming chanend c, in port p, clock clk, unsigned sample_freq_es
 {
     int initial_divider;
     in port * movable pp = &p;
-    in buffered port:4 * movable pbuf = reconfigure_port(move(pp), in buffered port:4);
+    in buffered port:4 * movable p_buf = reconfigure_port(move(pp), in buffered port:4);
     if (sample_freq_estimate > 96000)
     {
         initial_divider = 1;
@@ -37,10 +37,10 @@ void spdif_rx(streaming chanend c, in port p, clock clk, unsigned sample_freq_es
         initial_divider = 4;
     }
 
-    SpdifReceive(*pbuf, c, initial_divider, clk);
+    SpdifReceive(*p_buf, c, initial_divider, clk);
 
     // Set pointers and ownership back to original state if SpdifReceive() exits
-    pp = reconfigure_port(move(pbuf), in port);
+    pp = reconfigure_port(move(p_buf), in port);
 }
 
 void spdif_receive_shutdown(streaming chanend c)
@@ -54,12 +54,15 @@ void spdif_rx_441(streaming chanend c, buffered in port:32 p);
 void spdif_rx_48(streaming chanend c, buffered in port:32 p);
 int check_clock_div(buffered in port:32 p);
 
-void spdif_rx(streaming chanend c, buffered in port:32 p, clock clk, unsigned sample_freq_estimate)
+void spdif_rx(streaming chanend c, in port p, clock clk, unsigned sample_freq_estimate)
 {
     unsigned sample_rate = sample_freq_estimate;
 
+    in port * movable pp = &p;
+    in buffered port:32 * movable p_buf = reconfigure_port(move(pp), in buffered port:32);
+
     // Configure spdif rx port to be clocked from spdif_rx clock defined below.
-    configure_in_port(p, clk);
+    configure_in_port(*p_buf, clk);
 
     while(1)
     {
@@ -76,12 +79,12 @@ void spdif_rx(streaming chanend c, buffered in port:32 p, clock clk, unsigned sa
         start_clock(clk);
 
         // Check our clock div value is correct
-        if (check_clock_div(p) == 0)
+        if (check_clock_div(*p_buf) == 0)
         {
             if(sample_rate % 44100)
-                spdif_rx_48(c, p);
+                spdif_rx_48(c, *p_buf);
             else
-                spdif_rx_441(c, p);
+                spdif_rx_441(c, *p_buf);
         }
 
         // Get next sample rate from current sample rate.
@@ -97,6 +100,9 @@ void spdif_rx(streaming chanend c, buffered in port:32 p, clock clk, unsigned sa
             default:     sample_rate = 48000;  break;
         }
     }
+
+    // Set pointers and ownership back to original state if SpdifReceive() exits (currently unreachable)
+    pp = reconfigure_port(move(p_buf), in port);
 }
 
 #endif

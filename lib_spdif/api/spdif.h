@@ -63,11 +63,7 @@
  * \param sample_freq_estimate   The initial expected sample rate (in Hz).
  *
  **/
-#if (LEGACY_SPDIF_RECEIVER)
 void spdif_rx(streaming chanend c, in port p_spdif, clock clk, unsigned sample_freq_estimate);
-#else
-void spdif_rx(streaming chanend c, buffered in port:32 p, clock clk, unsigned sample_freq_estimate);
-#endif
 
 /** Receive a sample from the S/PDIF component.
  *
