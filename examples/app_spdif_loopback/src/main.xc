@@ -128,6 +128,13 @@ void app_pll_setup(void)
     delay_milliseconds(10);
 }
 
+/* Returns parity for a given word */
+static unsigned inline parity32(unsigned x)
+{
+    crc32(x, 0, 1);
+    return (x & 1);
+}
+
 #pragma unsafe arrays
 void handle_samples(streaming chanend c)
 {
@@ -165,7 +172,11 @@ void handle_samples(streaming chanend c)
         c :> tmp;
         outwords[i] = tmp;
     }
-
+    
+    // Known channel status block data.
+    unsigned cs_block_l[6] = {0x0A107A04, 0x0000000B, 0x00000000, 0x00000000, 0x00000000, 0x00000000};
+    unsigned cs_block_r[6] = {0x0A207A04, 0x0000000B, 0x00000000, 0x00000000, 0x00000000, 0x00000000};
+    
     // Manually parse the output words to look for errors etc.
     // Based on known TX samples.
     unsigned errors = 0;
@@ -182,9 +193,7 @@ void handle_samples(streaming chanend c)
             if (i+384 >= 20000)
                 break;
             //printf("Block Start");
-            if (block_count == 0)
-                printf("\n");
-            else
+            if (block_count > 0)
             {
                 //printf(". Samples in last block = %d\n", (i-i_last));
                 if ((i-i_last) != 384)
@@ -196,23 +205,31 @@ void handle_samples(streaming chanend c)
             block_count++;
             i_last = i;
             unsigned expected = 0;
+            unsigned rx_word;
+            unsigned expected_cs_bit;
+            unsigned expected_parity_bit;
             for(int j=0; j<384;j++)
             {
+                rx_word = outwords[i+j];
                 unsigned index = j/2;
-                if (j==0)
+                if (j%2 == 0) // Even
                 {
-                    expected = (sine_table1[index % 96] << 4) | SPDIF_FRAME_Z;
+                    if (j == 0)
+                        expected = (sine_table1[index % 96] << 4) | SPDIF_FRAME_Z;
+                    else
+                        expected = (sine_table1[index % 96] << 4) | SPDIF_FRAME_X;
+                    expected_cs_bit = (cs_block_l[index/32] & (0x1 << (index%32))) >> (index%32);
                 }
-                else if (j%2 == 0)
-                {
-                    expected = (sine_table1[index % 96] << 4) | SPDIF_FRAME_X;
-                }
-                else if (j%2 == 1)
+                else // Odd
                 {
                     expected = (sine_table2[index % 96] << 4) | SPDIF_FRAME_Y;
+                    expected_cs_bit = (cs_block_r[index/32] & (0x1 << (index%32))) >> (index%32);
                 }
-
-                unsigned checkword = outwords[i+j] & (0x0FFFFFF0 | SPDIF_RX_PREAMBLE_MASK);
+                expected |= expected_cs_bit << 30;
+                expected_parity_bit = parity32(expected & 0xFFFFFFF0); // Parity is over all bits excluding preamble.
+                expected |= expected_parity_bit << 31;
+                // Note in tx stream, Validity and User bits both 0.
+                unsigned checkword = rx_word & (0xFFFFFFF0 | SPDIF_RX_PREAMBLE_MASK);
                 if (checkword != expected)
                 {
                     errors++;
