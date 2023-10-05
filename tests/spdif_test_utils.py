@@ -288,21 +288,21 @@ class Frames():
     
     def stream(self, buffer_count=0, polarity=0):
         lines = self._construct_out()
+        start_buff = lines[-buffer_count:] if buffer_count > 0 else []
+        end_buff = lines[:buffer_count]
+        for i, line in enumerate(start_buff):
+            if line[:8] == PREAMBLE_Z:
+                start_buff[i] = PREAMBLE_X + line[8:]
+        for i, line in enumerate(end_buff):
+            if line[:8] == PREAMBLE_Z:
+                end_buff[i] = PREAMBLE_X + line[8:]
         stream = b''
-        for line in lines:
+        for line in start_buff + lines + end_buff:
             byte = 0
             for bit in line[::-1]:
                 bit = (byte & 0x1) if bit == "0" else 1 - (byte & 0x1)
                 byte = (byte << 1) | bit
             stream += byte.to_bytes(8, "little")
-        # repeat the final subframe a few times at the start to allow the receiver to lock and at the end to allow the receiver to clear the final subframe
-        for _ in range(buffer_count):
-            byte = 0
-            for bit in lines[-1][::-1]:
-                
-                bit = (byte & 0x1) if bit == "0" else 1 - (byte & 0x1)
-                byte = (byte << 1) | bit
-            stream = byte.to_bytes(8, "little") + stream + byte.to_bytes(8, "little")
         return stream
 
 def sub_frame_string(sample_no,subframe):

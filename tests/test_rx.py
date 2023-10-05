@@ -17,6 +17,9 @@ MAX_CYCLES = 15000000
 KHz = 1000
 MHz = 1000 * KHz
 
+
+BUFFER_FRAMES = 8
+
 def _get_duration(sam_freq,sample_freq_estimate):
     if sam_freq == sample_freq_estimate:
         return 193
@@ -40,7 +43,7 @@ def test_spdif_rx(sam_freq,sample_freq_estimate, dummy_threads, capfd):
     ]
 
     frames = Frames(channels=audio, no_of_samples=no_of_samples, sam_freq=sam_freq)
-    out = frames.stream(buffer_count=6)
+    out = frames.stream(buffer_count=BUFFER_FRAMES)
     tester = testers.ComparisonTester(frames.expect())
     simthreads = [
         Spdif_tx(p_spdif_in,freq_for_sample_rate(sam_freq),out),

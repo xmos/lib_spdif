@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Network xmlns="http://www.xmos.com"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://www.xmos.com http://www.xmos.com">
+  <Type>Board</Type>
+  <Name>xcore.ai GENERIC</Name>
+
+  <Declarations>
+    <Declaration>tileref tile[2]</Declaration>
+  </Declarations>
+
+  <Packages>
+    <Package id="0" Type="XS3-UnA-1024-FB265">
+      <Nodes>
+        <Node Id="0" InPackageId="0" Type="XS3-L16A-1024" Oscillator="24MHz" SystemFrequency="500MHz" ReferenceFrequency="100MHz">
+          <Tile Number="0" Reference="tile[0]">
+          </Tile>
+          <Tile Number="1" Reference="tile[1]">
+          </Tile>
+        </Node>
+      </Nodes>
+    </Package>
+  </Packages>
+  <Nodes>
+    <Node Id="2" Type="device:" RoutingId="0x8000">
+      <Service Id="0" Proto="xscope_host_data(chanend c);">
+        <Chanend Identifier="c" end="3"/>
+      </Service>
+    </Node>
+  </Nodes>
+  <Links>
+    <Link Encoding="2wire" Delays="5clk" Flags="XSCOPE">
+      <LinkEndpoint NodeId="0" Link="XL0"/>
+      <LinkEndpoint NodeId="2" Chanend="1"/>
+    </Link>
+  </Links>
+  <JTAGChain>
+    <JTAGDevice NodeId="0"/>
+  </JTAGChain>
+
+</Network>
