@@ -175,11 +175,31 @@ void handle_samples(streaming chanend c)
         c :> tmp;
         outwords[i] = tmp;
     }
+  
+    #define CHAN_STAT_44100    (0x00000000)
+    #define CHAN_STAT_48000    (0x02000000)
+    #define CHAN_STAT_88200    (0x08000000)
+    #define CHAN_STAT_96000    (0x0A000000)
+    #define CHAN_STAT_176400   (0x0C000000)
+    #define CHAN_STAT_192000   (0x0E000000)
 
-    // Known channel status block data.
-    unsigned cs_block_l[6] = {0x0A107A04, 0x0000000B, 0x00000000, 0x00000000, 0x00000000, 0x00000000};
-    unsigned cs_block_r[6] = {0x0A207A04, 0x0000000B, 0x00000000, 0x00000000, 0x00000000, 0x00000000};
-
+    // Known channel status block data. Needs sample rate bits OR'ing in.
+    unsigned cs_block_l[6] = {0x00107A04, 0x0000000B, 0x00000000, 0x00000000, 0x00000000, 0x00000000};
+    unsigned cs_block_r[6] = {0x00207A04, 0x0000000B, 0x00000000, 0x00000000, 0x00000000, 0x00000000};
+    
+    // Or in the sampling frequency bits into the channel status block.
+    switch(SAMPLE_FREQUENCY_HZ)
+    {
+        //case 32000:
+        case 44100:  cs_block_l[0] |= CHAN_STAT_44100;  cs_block_r[0] |= CHAN_STAT_44100;   break;
+        case 48000:  cs_block_l[0] |= CHAN_STAT_48000;  cs_block_r[0] |= CHAN_STAT_48000;   break;
+        case 88200:  cs_block_l[0] |= CHAN_STAT_88200;  cs_block_r[0] |= CHAN_STAT_88200;   break;
+        case 96000:  cs_block_l[0] |= CHAN_STAT_96000;  cs_block_r[0] |= CHAN_STAT_96000;   break;
+        case 176400: cs_block_l[0] |= CHAN_STAT_176400; cs_block_r[0] |= CHAN_STAT_176400;  break;
+        case 192000: cs_block_l[0] |= CHAN_STAT_192000; cs_block_r[0] |= CHAN_STAT_192000;  break;
+        default:     cs_block_l[0] |= CHAN_STAT_44100;  cs_block_r[0] |= CHAN_STAT_44100;   break;
+    }
+    
     // Manually parse the output words to look for errors etc.
     // Based on known TX samples.
     unsigned errors = 0;
