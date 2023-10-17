@@ -9,10 +9,13 @@
 #include <stdio.h>
 
 // Change these defines to control optical/coax and set the sample frequency.
-#define OPTICAL
-#define SAMPLE_FREQUENCY_HZ 96000
+#ifndef OPTICAL
+#define OPTICAL            (1)
+#endif
 
-#ifdef OPTICAL
+#define SAMPLE_FREQUENCY_HZ (96000)
+
+#if(OPTICAL)
 on tile[0]: in              port    p_spdif_rx      = XS1_PORT_1O; // Optical rx
 on tile[1]: out buffered    port:32 p_spdif_tx      = XS1_PORT_1G; // Optical tx
 #else
@@ -25,20 +28,20 @@ on tile[0]:                 clock   clk_spdif_rx    = XS1_CLKBLK_1;
 on tile[1]: in              port    p_mclk_in       = XS1_PORT_1D;
 on tile[1]:                 clock   clk_spdif_tx    = XS1_CLKBLK_1;
 
-#define MCLK_FREQUENCY_48   24576000
-#define MCLK_FREQUENCY_441  22579200
+#define MCLK_FREQUENCY_48   (24576000)
+#define MCLK_FREQUENCY_441  (22579200)
 
 // Found solution: IN 24.000MHz, OUT 24.576000MHz, VCO 2457.60MHz, RD 1, FD 102.400 (m = 2, n = 5), OD 5, FOD 5, ERR 0.0ppm
-#define APP_PLL_CTL_24M  0x0A006500
-#define APP_PLL_DIV_24M  0x80000004
-#define APP_PLL_FRAC_24M 0x80000104
+#define APP_PLL_CTL_24M    (0x0A006500)
+#define APP_PLL_DIV_24M    (0x80000004)
+#define APP_PLL_FRAC_24M   (0x80000104)
 
 // Found solution: IN 24.000MHz, OUT 22.579186MHz, VCO 3522.35MHz, RD  1, FD  146.765 (m =  13, n =  17), OD  3, FOD   13, ERR -0.641ppm
-#define APP_PLL_CTL_22M  0x09009100
-#define APP_PLL_DIV_22M  0x8000000C
-#define APP_PLL_FRAC_22M 0x80000C10
+#define APP_PLL_CTL_22M    (0x09009100)
+#define APP_PLL_DIV_22M    (0x8000000C)
+#define APP_PLL_FRAC_22M   (0x80000C10)
 
-#define SINE_TABLE_SIZE 96
+#define SINE_TABLE_SIZE    (96)
 
 // One cycle of full scale 24 bit sine wave in 96 samples.
 // This will produce 500Hz signal at Fs = 48kHz, 1kHz at 96kHz and 2kHz at 192kHz.
@@ -60,8 +63,8 @@ const int32_t sine_table1[96] =
 
 // Two cycles of full scale 24 bit sine wave in 96 samples.
 // This will produce 1kHz signal at Fs = 48kHz, 2kHz at 96kHz and 4kHz at 192kHz.
-const int32_t sine_table2[96] = 
-{ 
+const int32_t sine_table2[96] =
+{
     0x000000,0x10B515,0x2120FB,0x30FBC5,0x3FFFFF,0x4DEBE4,0x5A8279,0x658C99,
     0x6ED9EB,0x7641AE,0x7BA374,0x7EE7A9,0x7FFFFF,0x7EE7A9,0x7BA374,0x7641AE,
     0x6ED9EB,0x658C99,0x5A8279,0x4DEBE4,0x3FFFFF,0x30FBC5,0x2120FB,0x10B515,
@@ -76,16 +79,24 @@ const int32_t sine_table2[96] =
     0x912615,0x9A7367,0xA57D87,0xB2141C,0xC00001,0xCF043B,0xDEDF05,0xEF4AEB
 };
 
-void generate_samples(chanend c) {
+void generate_samples(chanend c)
+{
     int i = 0;
     unsigned mclk;
     if ((SAMPLE_FREQUENCY_HZ % 44100) == 0)
+    {
         mclk = MCLK_FREQUENCY_441;
+    }
     else
+    {
         mclk = MCLK_FREQUENCY_48;
+    }
+
     printf("Generating S/PDIF samples at %dHz\n", SAMPLE_FREQUENCY_HZ);
     spdif_tx_reconfigure_sample_rate(c,SAMPLE_FREQUENCY_HZ,mclk);
-    while(1) {
+
+    while(1)
+    {
        // Generate a sine wave
        int sample_l = sine_table1[i] << 8;
        int sample_r = sine_table2[i] << 8; // Twice the frequency on right channel.
@@ -97,7 +108,6 @@ void generate_samples(chanend c) {
 // Set secondary (App) PLL control register
 void set_app_pll_init (tileref tile, int app_pll_ctl)
 {
-    // delay_microseconds(500);
     // Disable the PLL
     write_node_config_reg(tile, XS1_SSWITCH_SS_APP_PLL_CTL_NUM, (app_pll_ctl & 0xF7FFFFFF));
     // Enable the PLL to invoke a reset on the appPLL.
@@ -128,25 +138,18 @@ void app_pll_setup(void)
     delay_milliseconds(10);
 }
 
-/* Returns parity for a given word */
-static unsigned inline parity32(unsigned x)
-{
-    crc32(x, 0, 1);
-    return (x & 1);
-}
-
 #pragma unsafe arrays
 void handle_samples(streaming chanend c)
 {
     unsigned tmp;
     unsigned outwords[20000] = {0};
-    
+
 #if (LEGACY_SPDIF_RECEIVER)
-  printf("USING LEGACY SPDIF RECEIVER\n");
+    printf("USING LEGACY SPDIF RECEIVER\n");
 #else
-  printf("USING NEW SPDIF RECEIVER\n");
+    printf("USING NEW SPDIF RECEIVER\n");
 #endif
-    
+
     // Check for a stream of alternating preambles before trying decode.
     int alt_pre_count = 0;
     while(alt_pre_count < 128)
@@ -172,7 +175,7 @@ void handle_samples(streaming chanend c)
         c :> tmp;
         outwords[i] = tmp;
     }
-    
+  
     #define CHAN_STAT_44100    (0x00000000)
     #define CHAN_STAT_48000    (0x02000000)
     #define CHAN_STAT_88200    (0x08000000)
@@ -204,6 +207,7 @@ void handle_samples(streaming chanend c)
     unsigned block_count = 0;
     unsigned block_size_errors = 0;
     int i_last =0;
+
     for(int i=0; i<20000; i++)
     {
         unsigned pre = outwords[i] & SPDIF_RX_PREAMBLE_MASK;
@@ -222,12 +226,14 @@ void handle_samples(streaming chanend c)
                   block_size_errors++;
                 }
             }
+
             block_count++;
             i_last = i;
             unsigned expected = 0;
             unsigned rx_word;
             unsigned expected_cs_bit;
             unsigned expected_parity_bit;
+
             for(int j=0; j<384;j++)
             {
                 rx_word = outwords[i+j];
@@ -246,7 +252,7 @@ void handle_samples(streaming chanend c)
                     expected_cs_bit = (cs_block_r[index/32] & (0x1 << (index%32))) >> (index%32);
                 }
                 expected |= expected_cs_bit << 30;
-                expected_parity_bit = parity32(expected & 0xFFFFFFF0); // Parity is over all bits excluding preamble.
+                expected_parity_bit = spdif_check_parity(expected); // Parity is over all bits excluding preamble.
                 expected |= expected_parity_bit << 31;
                 // Note in tx stream, Validity and User bits both 0.
                 unsigned checkword = rx_word & (0xFFFFFFF0 | SPDIF_RX_PREAMBLE_MASK);
@@ -266,7 +272,6 @@ void handle_samples(streaming chanend c)
     }
     printf("Checked %d channel status blocks of samples. Expected number of samples = %d.\n", block_count, (block_count*384));
     printf("Error count %d, block size errors %d, ok samples count %d\n", errors, block_size_errors, ok);
-
 }
 
 void board_setup(void)
@@ -279,7 +284,6 @@ void board_setup(void)
 
     // Wait for power supplies to be up and stable.
     delay_milliseconds(10);
-
 }
 
 int main(void) {
@@ -287,14 +291,16 @@ int main(void) {
     streaming chan c_spdif_rx;
     par
     {
-        on tile[0]: {
+        on tile[0]:
+        {
             board_setup();
             app_pll_setup();
             spdif_rx(c_spdif_rx, p_spdif_rx, clk_spdif_rx, SAMPLE_FREQUENCY_HZ);
             while(1) {};
         }
         on tile[0]: handle_samples(c_spdif_rx);
-        on tile[1]: {
+        on tile[1]:
+        {
             spdif_tx_port_config(p_spdif_tx, clk_spdif_tx, p_mclk_in, 0);
             start_clock(clk_spdif_tx);
             spdif_tx(p_spdif_tx, c_spdif_tx);
@@ -303,3 +309,4 @@ int main(void) {
     }
     return 0;
 }
+
