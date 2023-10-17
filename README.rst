@@ -48,3 +48,8 @@ Support
 
 This package is supported by XMOS Ltd. Issues can be raised against the software at: http://www.xmos.com/support
 
+Required Software (dependencies)
+================================
+
+  * None
+

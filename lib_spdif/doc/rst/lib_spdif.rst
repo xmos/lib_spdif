@@ -8,21 +8,19 @@ External Signal Description
 ===========================
 
 The library implements the S/PDIF (Sony/Philips Digital Interface
-Format) protocol for carrying uncompressed 24-bit stereo PCM data.
-
-The precise transmission frequencies supported depend on the availability
-of an external clock (eg, a PLL or a crystal oscillator) that runs at a
-frequency of *channels* * *sampleRate* * *64* or a power-of-2
-multiple. For example, for 2 channels at 192 Khz the
-external clock has to run at a frequency of 24.576 MHz. This same frequency
-also supports 2 channels at 48 KHz (which requires a minimum frequency of
-6.144 MHz). If both 44,1 and 48 Khz frequencies are to be supported, both a
-24.576 MHz and a 22.579 MHz master clock is required.
-
-The receiver can receive stereo PCM signals up to 96 Khz.
+Format) protocol for carrying uncompressed stereo PCM data of up to 24bits.
 
 Connecting to the xCORE as Transmitter
 --------------------------------------
+
+The precise transmission frequencies supported depend on the availability
+of an external clock (e.g. a PLL or a crystal oscillator) that runs at a
+frequency of *channels* * *sampleRate* * *64* or a power-of-2
+multiple. For example, for 2 channels at 192 KHz the
+external clock has to run at a frequency of 24.576 MHz. This same frequency
+also supports 2 channels at 48 KHz (which requires a minimum frequency of
+6.144 MHz). If both 44,1 and 48 KHz frequencies are to be supported, both a
+24.576 MHz and a 22.579 MHz master clock is required.
 
 The connection of an S/PDIF transmit line to the xCORE is shown in
 :ref:`spdif_connect_tx`.
@@ -34,17 +32,18 @@ The connection of an S/PDIF transmit line to the xCORE is shown in
 
    Connecting S/PDIF transmit
 
-The outgoing signal should be resynchronized to the external clock
-using a D-type flip-flop. The incoming clock signal is used to drive
-an internal clock and can be shared with other software functions
-using the clock (e.g. S/PDIF receive or I2S).
+The output signal will contain jitter at the level of +-1 core clock (<2ns for a 500 MHz xcore)
+this is typically inconsequential but if lower jitter levels are desired the signal can be re-clocked
+by the external master clock to reduce the jitter to that of the external master clock.
+A simple D-type flip flop can be used for this purpose.
 
-For the best jitter tolerances on output it is recommended that a 500
-Mhz part is used.
-
+The incoming clock signal is used to drive an internal clock and can be shared with other software
+functions using the same master clock (e.g. ADAT transmit or I2S).
 
 Connecting to the xCORE as Receiver
 -----------------------------------
+
+The receiver can receive stereo PCM signals up to 192 KHz.
 
 The connection of an S/PDIF receiver line to the xCORE is shown in
 :ref:`spdif_connect_rx`.
@@ -56,8 +55,8 @@ The connection of an S/PDIF receiver line to the xCORE is shown in
 
    Connecting S/PDIF receiver
 
-Only a single wire is connected. The clock is recovered from the
-incoming data signal.
+Only a single wire is connected - the clock is recovered from the
+incoming data stream.
 
 Usage
 =====
@@ -66,8 +65,8 @@ All S/PDIF functions can be accessed via the ``spdif.h`` header::
 
   #include <spdif.h>
 
-You will also have to add ``lib_spdif`` to the
-``USED_MODULES`` field of your application Makefile.
+``lib_spdif`` should also be added to the
+``USED_MODULES`` field of the application Makefile.
 
 S/PDIF Transmitter
 ------------------
@@ -86,15 +85,18 @@ connection.
 For example, the following code instantiates an S/PDIF transmitter component
 and connects to it::
 
-  buffered out port:32 p_spdif_tx   = XS1_PORT_1K;
-  in port p_mclk_in     = XS1_PORT_1L;
-  clock clk_audio       = XS1_CLKBLK_1;
+  buffered out port:32 p_spdif_tx = XS1_PORT_1K;
+  in port p_mclk_in = XS1_PORT_1L;
+  clock clk_audio = XS1_CLKBLK_1;
 
-  int main(void) {
+  int main(void)
+  {
     chanend c_spdif;
-    par {
-      on tile[0]: {
-         spdif_tx_port_config(p_spdif_tx, clk_audio, p_mclk_in, 7);
+    par
+    {
+      on tile[0]:
+      {
+         spdif_tx_port_config(p_spdif_tx, clk_audio, p_mclk_in, 0);
          spdif_tx(p_spdif_tx, c_spdif);
         }
 
@@ -103,77 +105,28 @@ and connects to it::
     return 0;
   }
 
+The helper function ``spdif_tx_port_config()`` clocks the clock-block from the master clock
+port and, in turn, clocks the S/PDIF transmit port from this clock-block.
+
 The application can communicate with the components via API functions
 that take the channel end as arguments e.g.::
 
-  void my_application(chanend c_spdif) {
+  void my_application(chanend c_spdif)
+  {
     int32_t sample = 0;
     spdif_tx_reconfigure_sample_rate(c, 96000, 12288000);
-    while (1) {
+    while (1)
+    {
       sample++;
       spdif_tx_output(c_spdif, sample, sample + 1);
     }
   }
 
-S/PDIF Receiver
----------------
-
-S/PDIF components are instantiated as parallel tasks that run in a
-``par`` statement. The application can connect via a channel
-connection.
-
-.. _spdif_rx_task_diag:
-
-.. figure:: images/spdif_rx_task_diag.*
-   :width: 60%
-
-   S/PDIF receiver task diagram
-
-For example, the following code instantiates an S/PDIF transmitter component
-and connects to it::
-
-  port p_spdif_rx  = XS1_PORT_1F;
-  clock audio_clk  = XS1_CLKBLK_1;
-
-  int main(void) {
-      streaming chan c;
-      par {
-        spdif_rx(c, p_spdif_rx, audio_clk, 96000);
-        handle_samples(c);
-      }
-      return 0;
-  }
-
-The application can communicate with the components via API functions
-that take the channel end as arguments e.g.::
-
- void my_application(streaming chanend c)
- {
-  int32_t sample;
-  size_t index;
-  size_t left_count, right_count;
-  while(1) {
-    select {
-    case spdif_receive_sample(c, sample, index):
-      // sample contains the 24bit data
-      // You can process the audio data here
-      if (index == 0)
-        left_count++;
-      else
-        right_count++;
-      break;
-    }
-    ...
-
-Note that your program can react to incoming samples using a
-``select`` statement. More information on using ``par`` and ``select``
-statements can be found in the :ref:`XMOS Programming Guide<programming_guide>`.
-
 Configuring the Underlying Clock
 --------------------------------
 
 When using the transmit component, the internal clock needs to be
-configured to run of the incoming signal e.g.::
+configured to run off the incoming signal e.g.::
 
     spdif_tx_port_config(p_spdif_tx, clk_audio, p_mclk_in, 7);
 
@@ -189,8 +142,66 @@ clock. This will enable the correct alignment of outgoing data with
 the clock. Other components such as I2S can still be used with the same
 clock after setting this delay.
 
-Note, the delay value shown above is a typical example and may need to be 
+Note, the delay value shown above is a typical example and may need to be
 tuned for the specific hardware being used.
+
+S/PDIF Receiver
+---------------
+
+S/PDIF components are instantiated as parallel tasks that run in a
+``par`` statement. The application can connect via a channel
+connection.
+
+.. _spdif_rx_task_diag:
+
+.. figure:: images/spdif_rx_task_diag.*
+   :width: 60%
+
+   S/PDIF receiver task diagram
+
+For example, the following code instantiates an S/PDIF receiver component
+and connects to it::
+
+  port p_spdif_rx  = XS1_PORT_1F;
+  clock audio_clk  = XS1_CLKBLK_1;
+
+  int main(void)
+  {
+      streaming chan c;
+      par
+      {
+        spdif_rx(c, p_spdif_rx, audio_clk, 96000);
+        handle_samples(c);
+      }
+      return 0;
+  }
+
+The application can communicate with the components via API functions
+that take the channel end as arguments e.g.::
+
+ void my_application(streaming chanend c)
+ {
+  int32_t sample;
+  size_t index;
+  size_t left_count, right_count;
+  while(1)
+  {
+    select
+    {
+      case spdif_receive_sample(c, sample, index):
+      // sample contains the 24bit data
+      // You can process the audio data here
+      if (index == 0)
+        left_count++;
+      else
+        right_count++;
+      break;
+    }
+    ...
+
+Note that a program can react to incoming samples using a
+``select`` statement. More information on using ``par`` and ``select``
+statements can be found in the :ref:`XMOS Programming Guide<programming_guide>`.
 
 |newpage|
 
