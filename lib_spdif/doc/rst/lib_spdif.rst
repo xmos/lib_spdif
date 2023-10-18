@@ -245,4 +245,3 @@ Known Issues
 
    * None
 
-.. include:: ../../../CHANGELOG.rst
