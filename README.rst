@@ -3,38 +3,27 @@ S/PDIF library
 
 :Version: 5.0.1
 :Vendor: XMOS
-:scope: General Use
+:Scope: General Use
 
 Summary
-=======
+*******
 
-A software defined S/PDIF library that allows you to transmit and receive S/PDIF data via xCORE
+A software defined S/PDIF library that allows transmission and reception of S/PDIF data via xCORE
 ports. S/PDIF is a digital data streaming interface. The components in the library are controlled
 via C using the XMOS multicore extensions (xC) and provides both a S/PDIF receiver and transmitter.
 
 Features
---------
+========
 
- * Supports stereo S/PDIF receive up to sample rates up to 96KHz
- * Supports stereo S/PDIF transmit up to 192KHz
-
-Software Version and Dependencies
----------------------------------
-
-The CHANGELOG contains information about the current and previous versions.
-For a list of direct dependencies, look for DEPENDENT_MODULES in lib_spdif/module_build_info.
+ * Supports stereo S/PDIF receive for sample rates up to 192KHz
+ * Supports stereo S/PDIF transmit for sample rates up to 192KHz
 
 Related Application Notes
--------------------------
+=========================
 
 The following application notes use this library:
 
   * AN00231 - SPDIF Receive to I2S output using Asynchronous Sample Rate Conversion
-
-Required Software (dependencies)
-================================
-
-  * None
 
 Documentation
 =============
