@@ -4,8 +4,10 @@ lib_spdif Change Log
 6.0.0
 -----
 
+  * ADDED:     Shutdown function for S/PDIF transmitter
   * CHANGED:   Receiver rearchitected for improved performance and jitter
     tolerance
+  * CHANGED:   API function names updated for uniformity between rx and tx
 
 5.0.1
 -----
@@ -29,7 +31,7 @@ lib_spdif Change Log
 4.2.0
 -----
 
-  * ADDED:     Added shutdown function for S/PDIF Receiver
+  * ADDED:     Shutdown function for S/PDIF receiver
   * CHANGED:   spdif_tx_example updated to use XK-AUDIO-216-MC
 
 4.1.0
