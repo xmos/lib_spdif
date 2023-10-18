@@ -5,13 +5,13 @@
 |newpage|
 
 External Signal Description
-===========================
+***************************
 
 The library implements the S/PDIF (Sony/Philips Digital Interface
-Format) protocol for carrying uncompressed stereo PCM data of up to 24bits.
+Format) protocol for transporting uncompressed stereo PCM data of up to 24bits.
 
 Connecting to the xCORE as Transmitter
---------------------------------------
+======================================
 
 The precise transmission frequencies supported depend on the availability
 of an external clock (e.g. a PLL or a crystal oscillator) that runs at a
@@ -32,7 +32,7 @@ The connection of an S/PDIF transmit line to the xCORE is shown in
 
    Connecting S/PDIF transmit
 
-The output signal will contain jitter at the level of +-1 core clock (<2ns for a 500 MHz xcore)
+The output signal will contain jitter at the level of +/-1 core clock (<2ns for a 500 MHz xcore)
 this is typically inconsequential but if lower jitter levels are desired the signal can be re-clocked
 by the external master clock to reduce the jitter to that of the external master clock.
 A simple D-type flip flop can be used for this purpose.
@@ -41,7 +41,7 @@ The incoming clock signal is used to drive an internal clock and can be shared w
 functions using the same master clock (e.g. ADAT transmit or I2S).
 
 Connecting to the xCORE as Receiver
------------------------------------
+===================================
 
 The receiver can receive stereo PCM signals up to 192 KHz.
 
@@ -59,7 +59,7 @@ Only a single wire is connected - the clock is recovered from the
 incoming data stream.
 
 Usage
-=====
+*****
 
 All S/PDIF functions can be accessed via the ``spdif.h`` header::
 
@@ -69,7 +69,7 @@ All S/PDIF functions can be accessed via the ``spdif.h`` header::
 ``USED_MODULES`` field of the application Makefile.
 
 S/PDIF Transmitter
-------------------
+==================
 
 S/PDIF components are instantiated as parallel tasks that run in a
 ``par`` statement. The application can connect via a channel
@@ -130,23 +130,23 @@ configured to run off the incoming signal e.g.::
 
     spdif_tx_port_config(p_spdif_tx, clk_audio, p_mclk_in, 7);
 
-This function needs to be called before the ``spdif_tx`` function in
+This function needs to be called before the ``spdif_tx()`` function in
 the programs ``par`` statement.
 
 
-In this function the ``configure_clock_src`` will configure a clock to run off an
-incoming port (see the XMOS tools user guide for more
-information). The ``set_clock_fall_delay`` function configures an
-internal delay from the incoming clock signal to the internal
-clock. This will enable the correct alignment of outgoing data with
-the clock. Other components such as I2S can still be used with the same
-clock after setting this delay.
+In this function the ``configure_clock_src()`` is used configure a clock to run off an
+incoming port - see the :ref:`XMOS Programming Guide<programming_guide>` for more information.
+
+The last parameter is used with the ``set_clock_fall_delay()`` function to configure an
+internal delay from the incoming clock signal to the internal clock's falling edge.
+This is done to allow for the correct alignment of outgoing data with
+the master clock at the external D-type flip-flop.
 
 Note, the delay value shown above is a typical example and may need to be
 tuned for the specific hardware being used.
 
 S/PDIF Receiver
----------------
+===============
 
 S/PDIF components are instantiated as parallel tasks that run in a
 ``par`` statement. The application can connect via a channel
@@ -206,17 +206,17 @@ statements can be found in the :ref:`XMOS Programming Guide<programming_guide>`.
 |newpage|
 
 API
-===
+***
 
 Creating an S/PDIF Receiver Instance
-------------------------------------
+====================================
 
 .. doxygenfunction:: spdif_rx
 
 |newpage|
 
 S/PDIF Receiver API
--------------------
+===================
 
 .. doxygenfunction:: spdif_receive_sample
 .. doxygenfunction:: spdif_receive_shutdown
@@ -224,7 +224,7 @@ S/PDIF Receiver API
 |newpage|
 
 Creating an S/PDIF Transmitter Instance
----------------------------------------
+=======================================
 
 .. doxygenfunction:: spdif_tx_port_config
 .. doxygenfunction:: spdif_tx
@@ -232,7 +232,7 @@ Creating an S/PDIF Transmitter Instance
 |newpage|
 
 S/PDIF Transmitter API
-----------------------
+======================
 
 .. doxygenfunction:: spdif_tx_reconfigure_sample_rate
 .. doxygenfunction:: spdif_tx_output
@@ -241,9 +241,8 @@ S/PDIF Transmitter API
 |appendix|
 
 Known Issues
-============
+************
 
    * None
-
 
 .. include:: ../../../CHANGELOG.rst
