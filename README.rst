@@ -3,15 +3,13 @@ S/PDIF library
 
 :Version: 5.0.1
 :Vendor: XMOS
-
-
 :scope: General Use
 
 Summary
 =======
 
-A software defined S/PDIF library that allows you to trasnmit or receive S/PDIF data via xCORE 
-ports. S/PDIF is a digital data streaming interface. The components in the libary are controlled
+A software defined S/PDIF library that allows you to transmit and receive S/PDIF data via xCORE
+ports. S/PDIF is a digital data streaming interface. The components in the library are controlled
 via C using the XMOS multicore extensions (xC) and provides both a S/PDIF receiver and transmitter.
 
 Features
