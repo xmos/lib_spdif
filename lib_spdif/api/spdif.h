@@ -84,7 +84,7 @@ void spdif_rx(streaming chanend c, in port p, clock clk, unsigned sample_freq_es
      int32_t sample;
      size_t index;
      select {
-       case spdif_receive_sample(c, sample, index):
+       case spdif_rx_sample(c, sample, index):
             // use sample and index here...
             ...
             break;
@@ -100,16 +100,16 @@ void spdif_rx(streaming chanend c, in port p, clock clk, unsigned sample_freq_es
  *                  (i.e. 0 for left channel and 1 for right channel).
  */
 #pragma select handler
-void spdif_receive_sample(streaming chanend c, int32_t &sample, size_t &index);
+void spdif_rx_sample(streaming chanend c, int32_t &sample, size_t &index);
 
-/** Shutdown the S/PDIF component.
+/** Shutdown the S/PDIF receiver component.
  *
  *  This function shuts down the SPDIF RX component causing the call to
  *  spdif_rx() to return.
  *
  *   \param c       chanend connected to the S/PDIF receiver component
  */
-void spdif_receive_shutdown(streaming chanend c);
+void spdif_rx_shutdown(streaming chanend c);
 
 /** Checks the parity of a received S/PDIF sample
  *
@@ -118,7 +118,7 @@ void spdif_receive_shutdown(streaming chanend c);
  * \return          0 for good parity, non-zero for bad parity
  *
  */
-static inline int spdif_check_parity(unsigned sample)
+static inline int spdif_rx_check_parity(unsigned sample)
 {
     unsigned x = (sample>>4);
     crc32(x, 0, 1);
@@ -185,5 +185,14 @@ void spdif_tx_reconfigure_sample_rate(chanend c_spdif_tx,
  * \param rsample       right sample to transmit
  */
 void spdif_tx_output(chanend c_spdif_tx, unsigned lsample, unsigned rsample);
+
+/** Shutdown the S/PDIF transmitter component.
+ *
+ *  This function shuts down the SPDIF Tx component causing the call to
+ *  spdif_tx() to return.
+ *
+ *   \param c       chanend connected to the S/PDIF transmitter component
+ */
+void spdif_tx_shutdown(chanend c);
 
 #endif /* _SPDIF_H_ */

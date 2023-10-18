@@ -90,7 +90,7 @@ static inline void spdif_rx_lock(buffered in port:32 p, unsigned &t, unsigned &a
     p :> void @ t; // read port counter
     t+= 100;
     t <<= 16; // t is now in 16.16 fixed point format
-    
+
     // Run the loop for 512 INs, just running the PLL every time, no preamble check. This is because in this initial course lock phase we may have port times that are below nominal giving us even less time.
     // We will exit this phase in lock but maybe locked to the wrong edge. The adder value will be approx correct.
     for(int i = 0; i < 512;i++)
@@ -101,7 +101,7 @@ static inline void spdif_rx_lock(buffered in port:32 p, unsigned &t, unsigned &a
         adder -= raw_err;
         t += adder - (raw_err<<9);
     }
-    
+
     // We then run loop again for a fixed time looking for preambles.
     // Check preambles are there, if not we add 2UI to port time and exit. This will bump the port time to the correct reference edge.
     for(int i = 0; i < 512;i++)
@@ -114,17 +114,16 @@ static inline void spdif_rx_lock(buffered in port:32 p, unsigned &t, unsigned &a
         adder -= raw_err;
         t += adder - (raw_err<<9);
     }
-    
+
     if (pre_count < 16)
        t += (17<<15); // 8.5
-    
+
     // Set the new port time ready for the first IN.
     asm volatile("setpt res[%0], %1"::"r"(p),"r"(t>>16));
-
 }
 
 #pragma unsafe arrays
-void spdif_rx_48(streaming chanend c, buffered in port:32 p)
+int spdif_rx_48(streaming chanend c, buffered in port:32 p)
 {
     unsigned sample;
     unsigned outword = 0;
@@ -132,6 +131,7 @@ void spdif_rx_48(streaming chanend c, buffered in port:32 p)
     unsigned unlock_cnt = 0;
     unsigned t;
     unsigned adder = 2133333; // ideal 48 (32.552 * 65536)
+    unsigned char tmp;
 
     // Run function to lock to input stream, retain port time and adder to be used directly below.
     spdif_rx_lock(p, t, adder);
@@ -163,14 +163,27 @@ void spdif_rx_48(streaming chanend c, buffered in port:32 p)
             else
               z_pre_sample = 0;
             spdif_rx_8UI_48(p, t, sample, outword, adder);
+
+            /* Check for exit */
+            select
+            {
+                case sinct_byref(c, tmp):
+                    soutct(c, XS1_CT_END);
+                    return 1;
+                default:
+                    break;
+            }
+
             spdif_rx_8UI_48(p, t, sample, outword, adder);
             spdif_rx_8UI_48(p, t, sample, outword, adder);
         }
     }
+
+    return 0;
 }
 
 #pragma unsafe arrays
-void spdif_rx_441(streaming chanend c, buffered in port:32 p)
+int spdif_rx_441(streaming chanend c, buffered in port:32 p)
 {
     unsigned sample;
     unsigned outword = 0;
@@ -178,6 +191,7 @@ void spdif_rx_441(streaming chanend c, buffered in port:32 p)
     unsigned unlock_cnt = 0;
     unsigned t;
     unsigned adder = 2321995; // ideal 44.1 (35.430 * 65536).
+    unsigned char tmp;
 
     // Run function to lock to input stream, retain port time and adder to be used directly below.
     spdif_rx_lock(p, t, adder);
@@ -209,10 +223,23 @@ void spdif_rx_441(streaming chanend c, buffered in port:32 p)
             else
               z_pre_sample = 0;
             spdif_rx_8UI_441(p, t, sample, outword, adder);
+
+            /* Check for exit */
+            select
+            {
+                case sinct_byref(c, tmp):
+                    soutct(c, XS1_CT_END);
+                    return 1;
+                default:
+                    break;
+            }
+
             spdif_rx_8UI_441(p, t, sample, outword, adder);
             spdif_rx_8UI_441(p, t, sample, outword, adder);
         }
     }
+
+    return 0;
 }
 
 // This function checks the input signal is approximately the correct sample rate for the given mode/clock setting.
@@ -238,7 +265,7 @@ int check_clock_div(buffered in port:32 p)
             max_pulse = cls(sample);
         }
     }
-    
+
     // Now find the minimum pulse width
     for(int i=0; i<5000;i++)
     {

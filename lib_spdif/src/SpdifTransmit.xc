@@ -232,11 +232,18 @@ void SpdifTransmitError(chanend c_in)
 void spdif_tx(buffered out port:32 p, chanend c_in)
 {
     chkct(c_in, XS1_CT_END);
-    while (1)
+    while(1)
     {
         int chanStat_L[2], chanStat_R[2];
         unsigned divide;
         unsigned error = 0;
+
+        /* Check for shutdown */
+        if (testct(c_in))
+        {
+            chkct(c_in, XS1_CT_END);
+            return;
+        }
 
         /* Receive sample frequency over channel (in Hz) */
         unsigned  samFreq = inuint(c_in);
@@ -320,4 +327,10 @@ void spdif_tx_reconfigure_sample_rate(chanend c,
     outct(c, XS1_CT_END);
     outuint(c, sample_frequency);
     outuint(c, master_clock_frequency);
+}
+
+void spdif_tx_shutdown(chanend c)
+{
+    outct(c, XS1_CT_END);
+    outct(c, XS1_CT_END);
 }
