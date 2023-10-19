@@ -1,5 +1,5 @@
-S/PDIF library
-##############
+S/PDIF Component
+################
 
 :Version: 5.0.1
 :Vendor: XMOS
@@ -17,6 +17,7 @@ Features
 
  * Supports stereo S/PDIF receive for sample rates up to 192KHz
  * Supports stereo S/PDIF transmit for sample rates up to 192KHz
+ * Fully compliant to the IEC60958 specification
 
 Related Application Notes
 =========================

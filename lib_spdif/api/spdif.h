@@ -148,8 +148,8 @@ void spdif_tx_port_config(out buffered port:32 p, clock clk, in port p_mclk, uns
 /** S/PDIF transmit function.
  *
  * This function provides an S/PDIF transmit component.
- * It is capable of 11025, 12000, 22050, 24000,
- * 44100, 48000, 88200, 96000, and 192000 Hz sample rates.
+ * It is capable of 44100, 48000, 88200, 96000, and 192000 Hz sample
+ * rates.
  *
  * The sample rate can be dynamically changes during the operation
  * of the component. Note that the first API call to this component
