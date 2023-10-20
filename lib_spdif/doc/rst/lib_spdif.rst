@@ -66,26 +66,6 @@ The connection of an S/PDIF receiver line to the xCORE is shown in
 
 .. note:: Only a single wire is connected - the clock is recovered from the incoming data stream.
 
-The each 32-bit word received from the receive component has the following format:
-
-+----------+----------------+
-| Bit(s)   | Field          |
-+==========+================+
-| 3:0      | Preamble       |
-+----------+----------------+
-| 7:4      | Auxiliary Data  |
-+----------+----------------+
-| 27:8     | Audio sample   |
-+----------+----------------+
-| 28       | Validity       |
-+----------+----------------+
-| 29       | User           |
-+----------+----------------+
-| 30       | Control        |
-+----------+----------------+
-| 31       | Parity         |
-+----------+----------------+
-
 Usage
 *****
 
@@ -211,12 +191,13 @@ that take the channel end as arguments e.g.::
  {
   int32_t sample;
   size_t index;
-  size_t left_count, right_count;
+  size_t left_count = 0;
+  size_t right_count = 0;
   while(1)
   {
     select
     {
-      case spdif_receive_sample(c, sample, index):
+      case spdif_rx_sample(c, sample, index):
       // sample contains the 24bit data
       // You can process the audio data here
       if (index == 0)
@@ -230,6 +211,51 @@ that take the channel end as arguments e.g.::
 Note that a program can react to incoming samples using a
 ``select`` statement. More information on using ``par`` and ``select``
 statements can be found in the :ref:`XMOS Programming Guide<programming_guide>`.
+
+Each 32-bit word received from the receive component via the channel has the following format:
+
++----------+----------------+
+| Bit(s)   | Field          |
++==========+================+
+| 3:0      | Preamble       |
++----------+----------------+
+| 7:4      | Auxiliary data |
++----------+----------------+
+| 27:8     | Audio sample   |
++----------+----------------+
+| 28       | Validity       |
++----------+----------------+
+| 29       | User           |
++----------+----------------+
+| 30       | Control        |
++----------+----------------+
+| 31       | Parity         |
++----------+----------------+
+
+.. note:: The four auxilary data bits are typically used to extend the audio sample from 20 to 24 bits.
+
+The ``spdif_rx_sample()`` helper function strips away all fields other than the Audio Sample and Auxiliary data and returns
+this audio sample data in the upper 24 bits of the ``sample`` variable.
+
+Should other fields be desired - for parity checking, for instance, regular channel communication syntax can be used. For example::
+
+ void my_application(streaming chanend c)
+ {
+  int32_t sample;
+  size_t count = 0;
+
+  while(1)
+  {
+      c :> spdif_data;
+
+      // Check parity
+      int parity_error = spdif_rx_check_parity(spdif_data);
+
+      if (parity_error == 0)
+        count++;
+    }
+    ...
+
 
 |newpage|
 
@@ -248,6 +274,7 @@ S/PDIF Receiver API
 
 .. doxygenfunction:: spdif_rx_sample
 .. doxygenfunction:: spdif_rx_shutdown
+.. doxygenfunction:: spdif_rx_check_parity
 
 |newpage|
 
@@ -264,6 +291,7 @@ S/PDIF Transmitter API
 
 .. doxygenfunction:: spdif_tx_reconfigure_sample_rate
 .. doxygenfunction:: spdif_tx_output
+.. doxygenfunction:: spdif_tx_shutdown
 
 
 |appendix|

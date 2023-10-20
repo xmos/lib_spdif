@@ -115,7 +115,7 @@ void spdif_rx_shutdown(streaming chanend c);
  *
  * \param sample    Received sample to be checked
  *
- * \return          0 for good parity, non-zero for bad parity
+ * \return          Non-zero for error parity, otherwise 0
  *
  */
 static inline int spdif_rx_check_parity(unsigned sample)
