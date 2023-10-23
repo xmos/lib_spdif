@@ -26,7 +26,7 @@ void handle_samples(streaming chanend c)
     {
         select
         {
-            case spdif_receive_sample(c, sample, index):
+            case spdif_rx_sample(c, sample, index):
             // sample contains the 24bit data
             // You can process the audio data here
             if (index == 0)
