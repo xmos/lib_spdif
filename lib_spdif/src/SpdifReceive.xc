@@ -7,8 +7,6 @@
 
 #include "spdif.h"
 
-#if(!LEGACY_SPDIF_RECEIVER)
-
 static inline int cls(int idata)
 {
     int x;
@@ -288,6 +286,4 @@ int check_clock_div(buffered in port:32 p)
     }
     return 1;
 }
-
-#endif
 

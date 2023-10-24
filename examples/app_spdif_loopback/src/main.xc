@@ -157,12 +157,6 @@ void handle_samples(streaming chanend c, chanend c_sync)
     unsigned tmp;
     unsigned outwords[20000] = {0};
 
-#if (LEGACY_SPDIF_RECEIVER)
-    printf("USING LEGACY SPDIF RECEIVER\n");
-#else
-    printf("USING NEW SPDIF RECEIVER\n");
-#endif
-
     // Check for a stream of alternating preambles before trying decode.
     int alt_pre_count = 0;
     while(alt_pre_count < 128)

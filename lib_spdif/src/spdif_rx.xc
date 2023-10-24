@@ -26,33 +26,6 @@ void spdif_rx_shutdown(streaming chanend c)
     sinct(c);
 }
 
-#if (LEGACY_SPDIF_RECEIVER)
-void SpdifReceive(in buffered port:4 p, streaming chanend c, int initial_divider, clock clk);
-
-void spdif_rx(streaming chanend c, in port p, clock clk, unsigned sample_freq_estimate)
-{
-    int initial_divider;
-    in port * movable pp = &p;
-    in buffered port:4 * movable p_buf = reconfigure_port(move(pp), in buffered port:4);
-    if (sample_freq_estimate > 96000)
-    {
-        initial_divider = 1;
-    }
-    else if (sample_freq_estimate > 48000)
-    {
-        initial_divider = 2;
-    }
-    else
-    {
-        initial_divider = 4;
-    }
-
-    SpdifReceive(*p_buf, c, initial_divider, clk);
-
-    // Set pointers and ownership back to original state if SpdifReceive() exits
-    pp = reconfigure_port(move(p_buf), in port);
-}
-#else
 int spdif_rx_441(streaming chanend c, buffered in port:32 p);
 int spdif_rx_48(streaming chanend c, buffered in port:32 p);
 int check_clock_div(buffered in port:32 p);
@@ -111,5 +84,4 @@ void spdif_rx(streaming chanend c, in port p, clock clk, unsigned sample_freq_es
     // Set pointers and ownership back to original state if SpdifReceive() exits
     pp = reconfigure_port(move(p_buf), in port);
 }
-#endif
 
