@@ -1,7 +1,7 @@
 S/PDIF Component
 ################
 
-:Version: 5.0.1
+:Version: 6.0.0beta0
 :Vendor: XMOS
 :Scope: General Use
 
@@ -26,6 +26,11 @@ The following application notes use this library:
 
   * AN00231 - SPDIF Receive to I2S output using Asynchronous Sample Rate Conversion
 
+Required Software (dependencies)
+================================
+
+  * None
+
 Documentation
 =============
 
@@ -35,9 +40,3 @@ Support
 =======
 
 This package is supported by XMOS Ltd. Issues can be raised against the software at: http://www.xmos.com/support
-
-Required Software (dependencies)
-================================
-
-  * None
-
