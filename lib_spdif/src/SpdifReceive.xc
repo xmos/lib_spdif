@@ -262,12 +262,8 @@ int check_clock_div(buffered in port:32 p)
         {
             max_pulse = cls(sample);
         }
-    }
 
-    // Now find the minimum pulse width
-    for(int i=0; i<5000;i++)
-    {
-        p :> sample;
+        // Now find the minimum pulse width
         sample <<= cls(sample); // Shift off the top pulse (likely to not be a complete pulse)
         if (cls(sample) < min_pulse)
         {
