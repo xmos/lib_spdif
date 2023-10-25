@@ -1,48 +1,58 @@
 // Copyright 2014-2023 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
-#ifndef SPDIF_H_
-#define SPDIF_H_
+#ifndef _SPDIF_H_
+#define _SPDIF_H_
 #include <stdint.h>
 #include <stddef.h>
 #include <xs1.h>
 
+/** This constant provides a mask for the bits that should be used when
+ * inspecting the preamble of a sample
+ */
+#define SPDIF_RX_PREAMBLE_MASK   (0xC)
+
 /** This constant defines the four least-significant bits of the first
  * sample of a frame (typically a sample from the left channel)
  */
-#define SPDIF_FRAME_X 9
+#define SPDIF_FRAME_X            (0xC)
 
 /** This constant defines the four least-significant bits of the second or
  * later sample of a frame (typically a sample from the right channel,
  * unless there are more than two channels)
  */
-#define SPDIF_FRAME_Y 5
+#define SPDIF_FRAME_Y            (0x0)
 
 /** This constant defines the four least-significant bits of the first
  * sample of the first frame of a block (typically a sample from the left
  * channel)
  */
-#define SPDIF_FRAME_Z 3
+#define SPDIF_FRAME_Z            (0x8)
+
+/* Helper macros for inspecting preambles */
+#define SPDIF_IS_FRAME_X(x) ((x & SPDIF_RX_PREAMBLE_MASK) == SPDIF_FRAME_X)
+#define SPDIF_IS_FRAME_Y(x) ((x & SPDIF_RX_PREAMBLE_MASK) == SPDIF_FRAME_Y)
+#define SPDIF_IS_FRAME_Z(x) ((x & SPDIF_RX_PREAMBLE_MASK) == SPDIF_FRAME_Z)
+
+/* Helper macro for extracting sample bits from received S/PDIF subframe */
+#define SPDIF_RX_EXTRACT_SAMPLE(x) ((x & 0xFFFFFFF0) << 4)
 
 /** S/PDIF receive function.
  *
  * This function provides an S/PDIF receiver component.
- * It is capable of 11025, 12000, 22050, 24000,
- * 44100, 48000, 88200 and 96000 Hz sample rates.
- * When the decoder
- * encounters a long series of zeros it will lower its inernal divider; when it
- * encounters a short series of 0-1 transitions it will increase its internal
- * divider. This means that is will lock to the incoming sample rate.
+ * It is capable of receiving 44100, 48000, 88200, 96000, 176400 and 192000 Hz sample rates.
  *
- * \param p_spdif         S/PDIF input port.
+ * The receiver will modifiy the divider of the clock-block to lock to the incoming sample rate.
  *
- * \param c               channel to connect to the application.
+ * \param p                      S/PDIF input port.
  *
- * \param clk             A clock block used internally to clock data.
+ * \param c                      Channel to connect to the application.
  *
- * \param sample_freq_estimate The initial expected sample rate (in Hz).
+ * \param clk                    A clock block used internally to clock data.
+ *
+ * \param sample_freq_estimate   The initial expected sample rate (in Hz).
  *
  **/
-void spdif_rx(streaming chanend c, in port p_spdif, clock clk, unsigned sample_freq_estimate);
+void spdif_rx(streaming chanend c, in port p, clock clk, unsigned sample_freq_estimate);
 
 /** Receive a sample from the S/PDIF component.
  *
@@ -53,7 +63,7 @@ void spdif_rx(streaming chanend c, in port p_spdif, clock clk, unsigned sample_f
      int32_t sample;
      size_t index;
      select {
-       case spdif_receive_sample(c, sample, index):
+       case spdif_rx_sample(c, sample, index):
             // use sample and index here...
             ...
             break;
@@ -69,16 +79,30 @@ void spdif_rx(streaming chanend c, in port p_spdif, clock clk, unsigned sample_f
  *                  (i.e. 0 for left channel and 1 for right channel).
  */
 #pragma select handler
-void spdif_receive_sample(streaming chanend c, int32_t &sample, size_t &index);
+void spdif_rx_sample(streaming chanend c, int32_t &sample, size_t &index);
 
-/** Shutdown the S/PDIF component.
+/** Shutdown the S/PDIF receiver component.
  *
  *  This function shuts down the SPDIF RX component causing the call to
  *  spdif_rx() to return.
  *
  *   \param c       chanend connected to the S/PDIF receiver component
  */
-void spdif_receive_shutdown(streaming chanend c);
+void spdif_rx_shutdown(streaming chanend c);
+
+/** Checks the parity of a received S/PDIF sample
+ *
+ * \param sample    Received sample to be checked
+ *
+ * \return          Non-zero for error parity, otherwise 0
+ *
+ */
+static inline int spdif_rx_check_parity(unsigned sample)
+{
+    unsigned x = (sample>>4);
+    crc32(x, 0, 1);
+    return x & 1;
+}
 
 /** S/PDIF transmit configure port function
  *
@@ -103,8 +127,8 @@ void spdif_tx_port_config(out buffered port:32 p, clock clk, in port p_mclk, uns
 /** S/PDIF transmit function.
  *
  * This function provides an S/PDIF transmit component.
- * It is capable of 11025, 12000, 22050, 24000,
- * 44100, 48000, 88200, 96000, and 192000 Hz sample rates.
+ * It is capable of 44100, 48000, 88200, 96000, and 192000 Hz sample
+ * rates.
  *
  * The sample rate can be dynamically changes during the operation
  * of the component. Note that the first API call to this component
@@ -141,4 +165,13 @@ void spdif_tx_reconfigure_sample_rate(chanend c_spdif_tx,
  */
 void spdif_tx_output(chanend c_spdif_tx, unsigned lsample, unsigned rsample);
 
-#endif /* SPDIF_H_ */
+/** Shutdown the S/PDIF transmitter component.
+ *
+ *  This function shuts down the SPDIF Tx component causing the call to
+ *  spdif_tx() to return.
+ *
+ *   \param c       chanend connected to the S/PDIF transmitter component
+ */
+void spdif_tx_shutdown(chanend c);
+
+#endif /* _SPDIF_H_ */
