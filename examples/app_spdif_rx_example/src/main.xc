@@ -19,12 +19,14 @@ void handle_samples(streaming chanend c)
 {
     int32_t sample;
     size_t index;
-    size_t left_count, right_count;
+    int32_t left_count = 0;
+    int32_t right_count = 0;
+
     while(1)
     {
         select
         {
-            case spdif_receive_sample(c, sample, index):
+            case spdif_rx_sample(c, sample, index):
             // sample contains the 24bit data
             // You can process the audio data here
             if (index == 0)
@@ -33,7 +35,8 @@ void handle_samples(streaming chanend c)
                 right_count++;
             break;
         }
-        size_t total = left_count + right_count;
+
+        int32_t total = left_count + right_count;
 
         if (total % 10000 == 0)
         {

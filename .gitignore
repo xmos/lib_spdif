@@ -18,8 +18,8 @@ _build*
 *.*~
 *.swp
 *.swn
-*~
 *.swo
+*~
 
 # waf build files
 .lock-waf_*
