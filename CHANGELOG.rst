@@ -5,6 +5,7 @@ lib_spdif Change Log
 -----
 
   * ADDED:     Shutdown function for S/PDIF transmitter
+  * ADDED:     Support for XCommon CMake build system
   * CHANGED:   Receiver rearchitected for improved performance and jitter
     tolerance
   * CHANGED:   API function names updated for uniformity between rx and tx
