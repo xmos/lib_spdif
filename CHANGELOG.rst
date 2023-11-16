@@ -1,6 +1,11 @@
 lib_spdif Change Log
 ====================
 
+UNRELEASED
+----------
+
+  * ADDED:     Support for XCommon CMake build system
+
 6.0.0
 -----
 
