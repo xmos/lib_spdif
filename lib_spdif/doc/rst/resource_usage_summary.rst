@@ -17,3 +17,5 @@ Typical Resource Usage
     - pins: 1
     - ports: 1 (1-bit)
     - cores: 1
+
+The receiver and transmitter tasks each require a minimum of 62.5MHz to operate correctly.
