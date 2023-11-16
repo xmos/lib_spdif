@@ -3,9 +3,12 @@
 #include <xscope.h>
 #include <stdio.h>
 #include <xclib.h>
+#include <print.h>
+#include <syscall.h>
 
 // Required
 on tile[TILE]: in  buffered    port:32 p_spdif_rx    = XS1_PORT_1N; // SPDIF input port // mcaudio opt in // 1O is opt, 1N is coax
+on tile[TILE]: out             port    p_ready_out   = XS1_PORT_1F;
 on tile[TILE]: clock                   clk_spdif_rx  = XS1_CLKBLK_1;
 
 // Optional if required for board setup.
@@ -25,31 +28,34 @@ void board_setup(void)
     p_ctrl <: 0x20;
     
     // Wait for power supplies to be up and stable.
-    delay_milliseconds(10);
-
+    if(!_is_simulation())
+    {
+        delay_milliseconds(10);
+    }
     /////////////////////////////
 }
 
 #define CORE_CLOCK_MHZ 500
 #define CLK_DIVIDE 1
 // Define how many 32 bit samples to collect for analysis
-#define SAMPLES 60000 //61140
+#define SAMPLES 20000 //61140 
+#define RECORD 60000
 
 #define PORT_PAD_CTL_4mA_SCHMITT   0x00920006
 
 
-void printintBits(int word)
-{
-    unsigned mask = 0x80000000;
-    for (int i = 0; i<32; i++)
-    {
-      if ((word & mask) == mask)
-        printf("1");
-      else
-        printf("0");
-      mask >>= 1;
-    }
-}
+// void printintBits(int word)
+// {
+//     unsigned mask = 0x80000000;
+//     for (int i = 0; i<32; i++)
+//     {
+//       if ((word & mask) == mask)
+//         printf("1");
+//       else
+//         printf("0");
+//       mask >>= 1;
+//     }
+// }
 
 void spdif_rx_analyse(void)
 {
@@ -72,50 +78,48 @@ void spdif_rx_analyse(void)
     // asm volatile ("setc res[%0], %1" :: "r" (p_spdif_rx), "r" (0x0013)); // Turn on PULLUP
   
     // Delay a long time to make sure everything is settled
-    delay_milliseconds(1/*000*/);
+    if(!_is_simulation())
+    {
+        delay_milliseconds(1000);
+    }
     
-    printf("S/PDIF signal quality analyser.\n");
+    // printf("S/PDIF signal quality analyser.\n");
     
     float core_clock_ns = 1000/CORE_CLOCK_MHZ;
     
     unsigned sample_rate_MHz = CORE_CLOCK_MHZ/(CLK_DIVIDE*2);
     float sample_time_ns = (core_clock_ns * 2 * CLK_DIVIDE);
-    printf("sample time = %fns\n", sample_time_ns); 
+    printf("%fns\n", sample_time_ns); 
     
-    printf("Sampling at %dMHz\n", sample_rate_MHz);
+    printf("%dMHz\n", sample_rate_MHz);
     
-    unsigned samples[SAMPLES];
+    unsigned samples[RECORD];
     // #pragma unsafe arrays
     // Sample the input port and load into array in memory
-    for(unsigned i=0; i<SAMPLES; i++)
+
+    if(_is_simulation())
     {
-        p_spdif_rx :> samples[i];
+        p_ready_out <: 1;
+        for(unsigned i=0; i<SAMPLES; i++)
+        {
+            p_spdif_rx :> samples[i];
+            // printf("%u/%u\b\b\b\b\b\b\b\b\b\b\b\b\b",i,SAMPLES);
+        }
+        // for(unsigned i=0; i<SAMPLES; i++)
+        // {
+        //     printf("%08X\n",samples[i]);
+        // }
+
+        // exit(0);
+    }
+    else
+    {
+        for(unsigned i=0; i<RECORD; i++)
+        {
+            p_spdif_rx :> samples[i];
+        }
     }
 
-    // Some potentially useful printing functions
-    // for(int i=0; i<SAMPLES; i++)
-    // {
-    //     printf("Sample %d is 0x%08X\n", i, bitrev(samples[i]));
-    // }
-
-    // for(int i=0; i<SAMPLES; i++)
-    // {
-    //     printf("0x%08X,", samples[i]);
-    // }
-    // printf("\n");
-
-    // for(int i=0; i<20; i++)
-    // {
-    //     printf("%08X ", bitrev(samples[i]));
-    // }
-    // printf("\n");
-    // for(int i=0; i<20; i++)
-    // {
-    //     printintBits(bitrev(samples[i]));
-    //     printf(" ");
-    // }
-    // printf("\n");
-    
     // Now process the samples.
     // Look for pulses
     // Find and log all pulse lengths in an array and list if they are positive pulses (1s) or negative (0s).
@@ -132,8 +136,9 @@ void spdif_rx_analyse(void)
     
     for(int i=0; i<SAMPLES; i++)
     {
+        // printf("%u/%u\b\b\b\b\b\b\b\b\b\b\b\b\b",i,SAMPLES);
         cur_sample = samples[i];
-        //printf("Sample %d is 0x%08X\n", i, cur_sample);
+        // printf("Sample %d is 0x%08X\n", i, cur_sample); /* you may need to reduce the size of SAMPLES to enable printing*/
         for(int j=0; j<32; j++)
         {
             cur_bit = (cur_sample >> j) & 1;
@@ -143,17 +148,17 @@ void spdif_rx_analyse(void)
                 // Most transitions would be with 192kHz.
                 if (pulse_count >= (4*SAMPLES))
                 {
-                    printf("Too many transitions found. QUIT.\n");
+                    printf("Too many transitions found. QUIT.\n"); /* you may need to reduce the size of SAMPLES to enable printing*/
                     exit(1);
                 }
-                if (cur_value == 0) // rising edge
+                if (cur_value == 1) // rising edge
                 {
                     rising_count++; 
                 }
                 if (rising_count > 1) // Don't start until we've seen two rising edges, so first pulse length recorded is always negative and ignores first pulse length which would be bogus.
                 {
                     pulse_lengths[pulse_count] = t - last_tran;
-                    //printf("Found pulse %d at time %d\n", pulse_count, t);
+                    printf("Found pulse %d at time %d\n", pulse_count, t); /* you may need to reduce the size of SAMPLES to enable printing*/
                     pulse_count++;
                 }
                 cur_value = cur_bit;
@@ -165,7 +170,9 @@ void spdif_rx_analyse(void)
     
 /*     for(int i=0; i<pulse_count; i++)
     {
-        printf("Pulse length[%d] = %d\n", i, pulse_lengths[i]);
+        //you may need to reduce the size of SAMPLES to enable printing
+
+        printf("Pulse length[%d] = %d\n", i, pulse_lengths[i]); 
     } */
         
     // Basic analysis of input.
@@ -173,14 +180,14 @@ void spdif_rx_analyse(void)
     // Check signal is toggling
     if (pulse_count == 0)
     {
-        printf("No transitions found. Signal is static. QUIT.\n");
+        printf("No transitions found. Signal is static. QUIT.\n"); /* you may need to reduce the size of SAMPLES to enable printing*/
         exit(1);
     }
     
     // Check there are a minimum total number of transitions
     if (pulse_count < (SAMPLES>>4))
     {
-        printf("Too few transitions. QUIT.\n");
+        printf("Too few transitions. QUIT.\n"); /* you may need to reduce the size of SAMPLES to enable printing*/
         exit(1);
     }
     
@@ -225,8 +232,8 @@ void spdif_rx_analyse(void)
     unsigned scale = max_count/100;
     
     // Print the histogram
-    printf("Pulse Length Histogram\n");
-    printf("Pulse Length(ns), Count : Histogram graph\n");
+    // printf("Pulse Length Histogram\n"); /* you may need to reduce the size of SAMPLES to enable printing*/
+    // printf("Pulse Length(ns), Count : Histogram graph\n"); /* you may need to reduce the size of SAMPLES to enable printing*/
     for(int j=min_pulse; j<(max_pulse+1); j++)
     {
         printf("%5.1f, %4d : ", (j*sample_time_ns), pulse_histogram[j]);
@@ -241,7 +248,7 @@ void spdif_rx_analyse(void)
     // Find all the groups of bins with consecutive 0s in. (ideally would be two groups).
     unsigned zeros = 0;
     unsigned zeros_start[10] = {0};
-    unsigned zeros_len[10] = {0};    
+    unsigned zeros_len[10] = {0};
     unsigned zeros_groups = 0;
     #define ZERO_THRESH 2 // Below what count do we consider as just noise (only for debug in noisy cables/systems)
     
@@ -266,10 +273,10 @@ void spdif_rx_analyse(void)
         }
     }
     
-    printf("Found %d groups of zeros bins in pulse lengths histogram:\n", zeros_groups);
+    printf("No. of groups of zero bins %d:\n", zeros_groups);
     for(int i=0; i<zeros_groups; i++)
     {
-        printf("Zeros group %d: start: %d, end: %d, length: %d\n", i, zeros_start[i], (zeros_start[i] + zeros_len[i] - 1), zeros_len[i]);
+        printf("%d: s: %d, e: %d, l: %d\n", i, zeros_start[i], (zeros_start[i] + zeros_len[i] - 1), zeros_len[i]);
     }
     
     // Find the index of the longest two groups
@@ -278,7 +285,7 @@ void spdif_rx_analyse(void)
     
     if (zeros_groups < 2)
     {
-        printf("Found less than two groups of zeros, cannot discern between pulses. QUIT.\n");
+        printf("Found less than two groups of zeros, cannot discern between pulses. QUIT.\n"); /* you may need to reduce the size of SAMPLES to enable printing*/
         exit(1);
     }
     else // We have to find the longest two groups
@@ -300,11 +307,10 @@ void spdif_rx_analyse(void)
                 zeros_len_max[1] = zeros_len[i];
                 zeros_len_max_index[1] = i;
             }
-            
         }
     }
     
-    printf("Found two longest zero groups:\n");
+    printf("2 Longest zero groups:\n");
     unsigned thresh[2] = {0}; // pulse width thresholds [0] = short-mid, [1] = mid-long
     
     for(int i=0;i<2;i++)
@@ -314,11 +320,11 @@ void spdif_rx_analyse(void)
         unsigned length = zeros_len[index];
         if (length < 3)
         {
-            printf("Not a large enough separation between pulse length groups (<3). Cannot separate groups reliably. QUIT.\n");
+            printf("Not a large enough separation between pulse length groups (<3). Cannot separate groups reliably. QUIT.\n"); /* you may need to reduce the size of SAMPLES to enable printing*/
             exit(1);
         }
         thresh[i] = start + (length/2);
-        printf("Zero group %d, start: %d, end: %d, length: %d, threshold %d\n", i, start, (start+length-1), length, thresh[i]);
+        printf("%d, s %d, e %d, l %d, t %d\n", i, start, (start+length-1), length, thresh[i]);
     }
     
     // We want the thresholds in pulse length order, if they are not, swap them.
@@ -329,7 +335,8 @@ void spdif_rx_analyse(void)
         thresh[1] = tmp;
     }
     
-    printf("Pulse length thresholds (samples): short-mid = %d, mid-long = %d\n", thresh[0], thresh[1]);
+    // printf("Pulse length thresholds (samples): short-mid = %d, mid-long = %d\n", thresh[0], thresh[1]);
+    printf("s-m %d, m-l %d\n", thresh[0], thresh[1]);
     
     // Indexing: short = 0, medium = 1, long = 2
     
@@ -338,9 +345,9 @@ void spdif_rx_analyse(void)
     // So look for a long pulse, wait for eight pulses to make sure we're in the middle of a word. Then look for long pulse, make this time t0. ignore next eight pulses and look for long again.
     // A subframe might be 4 + (28*2) = 60 pulses long if transmitting all 1s.
     // Lets measure the time for 256 subframes, this could be 60*256 = 15360 pulses.
-    unsigned first_long = 0;
-    unsigned pre_count = 0;
-    unsigned i_start, i_end;
+    int first_long = 0;
+    int pre_count = 0;
+    int i_start, i_end;
     
     //printf("pulse_count = %d\n", pulse_count);
     
@@ -373,9 +380,11 @@ void spdif_rx_analyse(void)
     
     // Sum up all the pulse times to get the total time
     unsigned t_pre256 = 0;
+    printf("i_start:%d@%p < i_end:%d@%p: %s\n", i_start, (void*) &i_start, i_end, (void*) &i_end, (i_start < i_end ? "TRUE" : "FALSE"));
     for(int i=i_start; i<i_end; i++)
     {
         t_pre256 = t_pre256 + pulse_lengths[i];
+        printf("i = %d   t_pre256 = %d  pulse_len = %c", i, t_pre256, pulse_lengths[i]);
     }
     
     float time_1ui_fl;
@@ -389,7 +398,7 @@ void spdif_rx_analyse(void)
     time_1ui_fl = (float) (t_pre256*sample_time_ns)/16384;
     calc_sample_rate_khz = 1000000/(time_1ui_fl*128);
     
-    printf("i_start = %d, i_end = %d, time_1ui_fl = %fns, calc_sample_rate = %.3fkHz\n", i_start, i_end, time_1ui_fl, calc_sample_rate_khz);
+    printf("i_start = %d@%p, i_end = %d@%p, time_1ui_fl = %fns, calc_sample_rate = %.3fkHz\n", i_start, (void*) &i_start, i_end, (void*) &i_end, time_1ui_fl, calc_sample_rate_khz);
     printf("Measured sample rate = %.3fkHz\n", calc_sample_rate_khz);
 
     unsigned pos_len_tot[3] = {0}; // Positive length totals
@@ -665,9 +674,11 @@ void spdif_rx_analyse(void)
     printf("Zero crossing TIE (ns): min %.2f, max %.2f, pk-pk %.2f\n", min_tie, max_tie, (max_tie - min_tie));
     
     //while(1);
-    for(unsigned i = 0; i < SAMPLES; i++)
-    {
-        printf("%u\n",samples[i]);
+    if(!_is_simulation()){
+        for(unsigned i = 0; i < RECORD; i++)
+        {
+            printf("%u\n",samples[i]);
+        }
     }
 
 }

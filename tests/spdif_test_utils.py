@@ -105,10 +105,17 @@ class Spdif_tx(Clock):
         self._trigger = trigger
 
     def run(self):
-        time = self.xsi.get_time()
-        while self._trigger != None and not self._trigger.check():
+        ready = False
 
-            pass
+        time = self.xsi.get_time()
+        while not ready:
+            time += self._get_next_interval()
+            self.wait_until(time)
+            ready = True if self.xsi.sample_port_pins("tile[0]:XS1_PORT_1F") == 1 else False
+
+        # while self._trigger != None and not self._trigger.check():
+
+        #     pass
         for byte in self._bytes:
             for i in range(8):
                 time += self._get_next_interval()

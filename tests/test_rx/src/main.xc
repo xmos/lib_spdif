@@ -27,6 +27,7 @@ on tile[0]:                 clock   c_out           = XS1_CLKBLK_2;
 
 void handle_samples(streaming chanend c, out buffered port:32 p_sim_out)
 {
+    debug_printf("Hi from the sim");
     configure_out_port_strobed_master(p_sim_out, p_strobe_out, c_out, 0);
     start_clock(c_out);
     uint32_t subframe;

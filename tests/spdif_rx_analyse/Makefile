@@ -18,10 +18,10 @@ APP_NAME =
 # If the variable XCC_MAP_FLAGS is set it overrides the flags passed to
 # xcc for the final link (mapping) stage.
 
-XCC_FLAGS = $(EXTRA_BUILD_FLAGS) -O2 -g -report -DTILE=0
+XCC_FLAGS = $(EXTRA_BUILD_FLAGS) -O2 -g -DDEBUG_PRINT_ENABLE=1 -DTILE=0
 
 # The USED_MODULES variable lists other module used by the application.
-USED_MODULES = lib_xassert
+USED_MODULES = lib_xassert lib_logging
 
 
 #=============================================================================
