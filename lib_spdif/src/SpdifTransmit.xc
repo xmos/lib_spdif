@@ -10,7 +10,6 @@
  */
 
 #include <xs1.h>
-#include <print.h>
 #include <xclib.h>
 #include "assert.h"
 #include "spdif.h"
