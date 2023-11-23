@@ -34,6 +34,7 @@ def test_spdif_tx(sam_freq, capfd):
     p_clock     = "tile[1]:XS1_PORT_1B"
     p_spdif_out = "tile[1]:XS1_PORT_1A"
     no_of_samples = _get_duration()
+    no_of_frames = (no_of_samples // 192) + (1 if no_of_samples % 192 != 0 else 0)
     mclk_freq = _get_mclk_freq(sam_freq)
 
     audio = [
@@ -41,7 +42,7 @@ def test_spdif_tx(sam_freq, capfd):
         ["ramp", 5],
     ]
 
-    tester = testers.ComparisonTester(Frames(channels=audio, no_of_samples=no_of_samples, sam_freq=sam_freq).expect())
+    tester = testers.ComparisonTester(Frames(channels=audio, no_of_frames=no_of_frames, sam_freq=sam_freq).expect()[:no_of_samples*len(audio)])
     simthreads = [
         Clock(p_clock,mclk_freq *2),
         Spdif_rx(p_spdif_out,freq_for_sample_rate(sam_freq),no_of_samples),

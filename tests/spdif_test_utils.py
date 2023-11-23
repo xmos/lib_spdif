@@ -10,6 +10,11 @@ PREAMBLE_Y = "10010110"
 TRANSITIONS_OK = "1111111111111111111111111111"
 TEST_SUBFRAME = PREAMBLE_Y + TRANSITIONS_OK + TRANSITIONS_OK
 
+def extract_preamble(subframe: int):
+    pre = subframe & 0xC
+    pre = "Z" if pre == 0x8 else "X" if pre == 0xC else "Y" if pre == 0x0 else "{0:02b}".format(pre >> 2)
+    return pre
+
 class Clock(SimThread):
     def __init__(self,port: str,freq_Hz: int, polarity = 0):
         self._pin = polarity
@@ -68,29 +73,28 @@ class Port_monitor(SimThread):
             self.wait_for_port_pins_change([self._p_debug_strobe])
             if self.xsi.sample_port_pins(self._p_debug_strobe) == 1:
                 debug = self.xsi.sample_port_pins(self._p_debug)
-                pre = debug & 0xF
+                pre = extract_preamble(debug)
                 sample = debug << 4
-                pre = "Z" if pre == 3 else "X" if pre == 9 else "Y" if pre == 5 else "{0:04b}".format(pre)
                 if found or pre == "Z":
                     sample = "{0:032b}".format(debug)[::-1]
                     frames.append(f"{(found)//2} [{pre}] - {sample[4::]} {TRANSITIONS_OK}")
                     if not init_values:
                         init_values = self._check_frames.log_initial_value((debug & 0x0FFFFFF0) >> 4)
+                    if self._print_frame:
+                        print(frames[-1])
                     found += 1
-        if self._print_frame:
-            print('\n'.join(frames))
         if self._check_frames != None:
-            expect = self._check_frames.expect().split("\n")
+            expect = self._check_frames.expect()
+            expect = expect[:self._no_of_samples]
             fail = False
             for i in range(max(len(frames), len(expect))):
                 expected = "-" if i >= len(expect) else expect[i]
                 sub_frame = "-" if i >= len(frames) else frames[i]
                 if sub_frame != expected:
-                    print(f"Expected: {expected} \nSeen:     {sub_frame}")
+                    print(f"Expected: {expected} Seen:     {sub_frame}")
                     fail = True
             if not fail:
                 print("PASS")
-               
         os._exit(os.EX_OK)
 
     def check(self):
@@ -99,36 +103,29 @@ class Port_monitor(SimThread):
         return None
 
 class Spdif_tx(Clock):
-    def __init__(self, port: str, freq_Hz: int, out: bytearray, trigger=None, polarity=0):
+    def __init__(self, port: str, freq_Hz: int, out: bytearray, trigger_pin=None, polarity=0):
         super().__init__(port, freq_Hz, polarity)
         self._bytes = out
-        self._trigger = trigger
+        self._trigger_pin = trigger_pin
 
     def run(self):
-        ready = False
-
+        if self._trigger_pin != None:
+            self.wait_for_port_pins_change([self._trigger_pin])
         time = self.xsi.get_time()
-        while not ready:
-            time += self._get_next_interval()
-            self.wait_until(time)
-            ready = True if self.xsi.sample_port_pins("tile[0]:XS1_PORT_1F") == 1 else False
-
-        # while self._trigger != None and not self._trigger.check():
-
-        #     pass
-        for byte in self._bytes:
-            for i in range(8):
-                time += self._get_next_interval()
-                self.wait_until(time)
-                bit = (byte >> i) & 0x1
-                self.xsi.drive_port_pins(self._port, bit)
+        while(1):
+            for byte in self._bytes:
+                for i in range(8):
+                    time += self._get_next_interval()
+                    self.wait_until(time)
+                    bit = (byte >> i) & 0x1
+                    self.xsi.drive_port_pins(self._port, bit)
 
 class Frames():
     def __init__(
             self,
             sources = None,
             channels = None,
-            no_of_samples = 0,
+            no_of_frames = 0,
             #byte 0
             pro=False,
             digital_audio=True,
@@ -150,7 +147,7 @@ class Frames():
             extra=None, # List of bytes
         ):
         # self.expect = ""
-        self._no_of_samples = no_of_samples
+        self._no_of_samples = no_of_frames * 192
         self._samples = None
         self._initial_values = []
         if sources != None:
@@ -262,26 +259,23 @@ class Frames():
 
     def _construct_out(self):
         frames = []
-        while (len(self._initial_values) < len(self._audio)):
-            self._initial_values.append(0)
-        if self._samples == None:
-            self._samples = []
-            for i, chan in enumerate(self._audio):
-                    self._samples.append([])
-                    value = self._initial_values[i]
-                    audio_func = Audio_func(chan[0],chan[1]).next
-                    for _ in range(self._no_of_samples):
-                        self._samples[i].append("{:024b}".format(((1 << 24) -1) & value)[::-1])
-                        value = audio_func(value)
-        for j, _ in enumerate(self._samples[0]):
-            for i, _ in enumerate(self._samples):
+        samples = []
+        for i, chan in enumerate(self._audio):
+            samples.append([])
+            value = 0 if i >= len(self._initial_values) else self._initial_values[i]
+            audio_func = Audio_func(chan[0],chan[1]).next
+            for _ in range(self._no_of_samples):
+                samples[i].append("{:024b}".format(((1 << 24) -1) & value)[::-1])
+                value = audio_func(value)
+        for j, _ in enumerate(samples[0]):
+            for i, _ in enumerate(samples):
                 if i == 0 and j % 192 == 0:
                     pre = PREAMBLE_Z
                 elif i == 0:
                     pre = PREAMBLE_X
                 else:
                     pre = PREAMBLE_Y
-                subframe = self._samples[i][j]
+                subframe = samples[i][j]
                 subframe += self._validity_flag[i][j % len(self._validity_flag[i])]
                 subframe += self._user_data[i][j % len(self._user_data[i])]
                 subframe += self._channel_status[i][j % len(self._channel_status[i])]
@@ -291,20 +285,15 @@ class Frames():
         return frames
     
     def expect(self):
-        return '\n'.join(sub_frame_string(i//len(self._samples),subframe) for i, subframe in enumerate(self._construct_out()))
+        expect = []
+        for i, subframe in enumerate(self._construct_out()):
+            expect.append(sub_frame_string(i//len(self._audio),subframe))
+        return expect
     
-    def stream(self, buffer_count=0, polarity=0):
+    def stream(self, quick_start_offset=0, polarity=0):
         lines = self._construct_out()
-        start_buff = lines[-buffer_count:] if buffer_count > 0 else []
-        end_buff = lines[:buffer_count]
-        for i, line in enumerate(start_buff):
-            if line[:8] == PREAMBLE_Z:
-                start_buff[i] = PREAMBLE_X + line[8:]
-        for i, line in enumerate(end_buff):
-            if line[:8] == PREAMBLE_Z:
-                end_buff[i] = PREAMBLE_X + line[8:]
         stream = b''
-        for line in start_buff + lines + end_buff:
+        for line in lines[quick_start_offset:] + lines[:quick_start_offset]:
             byte = 0
             for bit in line[::-1]:
                 bit = (byte & 0x1) if bit == "0" else 1 - (byte & 0x1)
@@ -348,6 +337,8 @@ class Recorded_stream():
 
 def freq_for_sample_rate(sam_freq: int):
     freq_Hz = None
+    no_of_channels = 2
+    no_of_bits_per_sub_frame = 64 # 32 bits of data & 32 transitions
     if sam_freq in [44100, 48000, 88200, 96000, 176400, 192000]:
-        freq_Hz = sam_freq * 128
+        freq_Hz = sam_freq * no_of_bits_per_sub_frame * no_of_channels
     return freq_Hz

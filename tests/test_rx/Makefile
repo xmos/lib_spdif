@@ -2,7 +2,9 @@
 # compiled for. It either refers to an XN file in the source directories
 # or a valid argument for the --target option when compiling.
 
-TARGET = sim.xn
+
+# TARGET = xk-audio-316-mc.xn
+TARGET = sim-316.xn
 
 # The APP_NAME variable determines the name of the final .xe file. It should
 # not include the .xe postfix. If left blank the name will default to 
@@ -17,11 +19,10 @@ APP_NAME =
 #
 # If the variable XCC_MAP_FLAGS is set it overrides the flags passed to
 # xcc for the final link (mapping) stage.
-
-XCC_FLAGS = $(EXTRA_BUILD_FLAGS) -O0 -g -DDEBUG_PRINT_ENABLE=1 -save-temps
+XCC_FLAGS = $(EXTRA_BUILD_FLAGS) -O0 -g -save-temps
 
 # The USED_MODULES variable lists other module used by the application.
-USED_MODULES = lib_spdif lib_xassert lib_logging
+USED_MODULES = lib_spdif
 
 
 #=============================================================================

@@ -4,7 +4,6 @@
 #include <xs1.h>
 #include <platform.h>
 #include <spdif.h>
-#include <debug_print.h>
 
 #ifndef SAMPLE_FREQ_ESTIMATE
 #define SAMPLE_FREQ_ESTIMATE 44100
@@ -27,10 +26,10 @@ on tile[0]:                 clock   c_out           = XS1_CLKBLK_2;
 
 void handle_samples(streaming chanend c, out buffered port:32 p_sim_out)
 {
-    debug_printf("Hi from the sim");
     configure_out_port_strobed_master(p_sim_out, p_strobe_out, c_out, 0);
     start_clock(c_out);
     uint32_t subframe;
+    p_sim_out <: 0x4;
     while(1)
     {
         c :> subframe;
