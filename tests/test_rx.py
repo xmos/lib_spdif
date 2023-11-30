@@ -26,21 +26,42 @@ QUICK_START_OFFSET = 0
 # that it can compleat the test while still receiving data
 NO_OF_TEST_FRAMES = 4
 
+DUMMY_THREADS = [0,1,2,3,4,5,6]
+SAM_FREQS = [44100,48000,88200,96000,176400,192000]
+CONFIGS = ["xs2","xs3"]
+
+STREAMS = [
+    Recorded_stream("48KHz_at_100MHz_fixed.stream", [["fixed", 0xEC8137], ["fixed", 0x137EC8]], 48*KHz, 100*MHz)
+]
+
+def spdif_rx_uncollect(config, sam_freq, sample_freq_estimate, dummy_threads):
+    if sam_freq != sample_freq_estimate:
+        return True
+    if sam_freq <176400 and dummy_threads != 0:
+        return True
+    return False
+
+def spdif_rx_stream_uncollect(config, stream, dummy_threads):
+    if dummy_threads not in [0,6]:
+        return True
+    return False
+
 def _get_duration(sam_freq,sample_freq_estimate):
     if sam_freq == sample_freq_estimate:
         return 193
     else:
         return 10
 
-@pytest.mark.parametrize("dummy_threads", [0,6])
-# @pytest.mark.parametrize("sample_freq_estimate", [44100,48000,88200,96000,176400,192000])
-@pytest.mark.parametrize("sam_freq", [44100,48000,88200,96000,176400,192000])
-# def test_spdif_rx(sam_freq,sample_freq_estimate, dummy_threads, capfd):
-def test_spdif_rx(sam_freq, dummy_threads, capfd):
+@pytest.mark.uncollect_if(func=spdif_rx_uncollect)
+@pytest.mark.parametrize("dummy_threads", DUMMY_THREADS)
+@pytest.mark.parametrize("sample_freq_estimate", SAM_FREQS)
+@pytest.mark.parametrize("sam_freq", SAM_FREQS)
+@pytest.mark.parametrize("config", CONFIGS)
+def test_spdif_rx(capfd, config, sam_freq, sample_freq_estimate, dummy_threads):
     # time taken in the simulator to correct frequency currently too long for tests. Re-enable sample rate mismatch once resolved
-    sample_freq_estimate = sam_freq
+    # sample_freq_estimate = sam_freq
 
-    xe = str(Path(__file__).parent / 'test_rx/bin/test_rx.xe')
+    xe = str(Path(__file__).parent / f"test_rx/bin/{config}/test_rx_{config}.xe")
     p_spdif_in     = "tile[0]:XS1_PORT_1E"
     p_debug_out    = "tile[0]:XS1_PORT_32A"
     p_debug_strobe = "tile[0]:XS1_PORT_1F"
@@ -71,6 +92,7 @@ def test_spdif_rx(sam_freq, dummy_threads, capfd):
         timeout=1500,
         simargs=simargs,
         build_options=[
+            f"CONFIG={config}",
             "EXTRA_BUILD_FLAGS="
             +f" -DSAMPLE_FREQ_ESTIMATE={sample_freq_estimate}"
             +f" -DTEST_DTHREADS={dummy_threads}"
@@ -78,15 +100,13 @@ def test_spdif_rx(sam_freq, dummy_threads, capfd):
         )
     assert result
 
+@pytest.mark.uncollect_if(func=spdif_rx_stream_uncollect)
+@pytest.mark.parametrize("dummy_threads", DUMMY_THREADS)
+@pytest.mark.parametrize("stream", STREAMS)
+@pytest.mark.parametrize("config", CONFIGS)
+def test_spdif_rx_stream(config, stream, dummy_threads, capfd):
 
-streams = [
-    Recorded_stream("48KHz_at_100MHz_fixed.stream", [["fixed", 0xEC8137], ["fixed", 0x137EC8]], 48*KHz, 100*MHz)
-]
-@pytest.mark.parametrize("stream", streams)
-@pytest.mark.parametrize("dummy_threads", [0,6])
-def test_spdif_rx_stream(stream, dummy_threads, capfd):
-
-    xe = str(Path(__file__).parent / 'test_rx/bin/test_rx.xe')
+    xe = str(Path(__file__).parent / f"test_rx/bin/{config}/test_rx_{config}.xe")
     p_spdif_in          = "tile[0]:XS1_PORT_1E"
     p_debug_out         = "tile[0]:XS1_PORT_32A"
     p_debug_strobe      = "tile[0]:XS1_PORT_1F"
@@ -118,6 +138,7 @@ def test_spdif_rx_stream(stream, dummy_threads, capfd):
         timeout=1500,
         simargs=simargs,
         build_options=[
+            f"CONFIG={config}",
             "EXTRA_BUILD_FLAGS="
             +f" -DSAMPLE_FREQ_ESTIMATE={stream.sam_freq}"
             +f" -DTEST_DTHREADS={dummy_threads}"

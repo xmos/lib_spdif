@@ -15,6 +15,8 @@ from spdif_test_utils import (
 )
 
 MAX_CYCLES = 15000000
+SAM_FREQS = [44100,48000,88200,96000,176400,192000]
+CONFIGS = ["xs2","xs3"]
 
 def _get_duration():
     return 193
@@ -27,10 +29,16 @@ def _get_mclk_freq(sam_freq):
     else:
         assert False
 
-@pytest.mark.parametrize("sam_freq", [44100,48000,88200,96000,176400,192000])
-def test_spdif_tx(sam_freq, capfd):
+def spdif_tx_uncollect(config, sam_freq):
 
-    xe = str(Path(__file__).parent / 'test_tx/bin/test_tx.xe')
+    return False
+
+@pytest.mark.uncollect_if(func=spdif_tx_uncollect)
+@pytest.mark.parametrize("sam_freq", SAM_FREQS)
+@pytest.mark.parametrize("config", CONFIGS)
+def test_spdif_tx(capfd, config, sam_freq):
+
+    xe = str(Path(__file__).parent / f"test_tx/bin/{config}/test_tx_{config}.xe")
     p_clock     = "tile[1]:XS1_PORT_1B"
     p_spdif_out = "tile[1]:XS1_PORT_1A"
     no_of_samples = _get_duration()
@@ -60,6 +68,7 @@ def test_spdif_tx(sam_freq, capfd):
         timeout=1500,
         simargs=simargs,
         build_options=[
+            f"CONFIG={config}",
             "EXTRA_BUILD_FLAGS="+
             f" -DSAMPLE_FREQUENCY_HZ={sam_freq}"+
             f" -DCHAN_RAMP_0={audio[0][1]}"+
