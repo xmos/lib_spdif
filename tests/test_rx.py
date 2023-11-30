@@ -68,7 +68,7 @@ def test_spdif_rx(sam_freq, dummy_threads, capfd):
         clean_before_build=True,
         tester=tester,
         capfd=capfd,
-        # timeout=None,
+        timeout=1500,
         simargs=simargs,
         build_options=[
             "EXTRA_BUILD_FLAGS="
@@ -115,6 +115,7 @@ def test_spdif_rx_stream(stream, dummy_threads, capfd):
         clean_before_build=True,
         tester=tester,
         capfd=capfd,
+        timeout=1500,
         simargs=simargs,
         build_options=[
             "EXTRA_BUILD_FLAGS="
