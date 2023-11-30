@@ -5,6 +5,7 @@ UNRELEASED
 ----------
 
   * ADDED:     Support for XCommon CMake build system
+  * ADDED:     Support for transmit at 32kHz
 
 6.0.0
 -----
