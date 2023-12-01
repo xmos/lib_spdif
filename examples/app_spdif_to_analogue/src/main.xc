@@ -2,15 +2,9 @@
 #include <platform.h>
 #include "i2s.h"
 #include "i2c.h"
-//#include <print.h>
 #include <spdif.h>
-//#include <stdlib.h>
-//#include <stdint.h>
-//#include <stddef.h>
-//#include <stdio.h>
 
 #define SAMPLE_FREQUENCY (48000)
-//#define MASTER_CLOCK_FREQUENCY (24576000)
 #define DATA_BITS (32)
 
 // I2S ports
@@ -26,7 +20,7 @@ on tile[0]:               port    p_sda     = PORT_I2C_SDA;
 
 // Change these defines to control optical/coax and set the sample frequency.
 #ifndef OPTICAL
-#define OPTICAL               (0)
+#define OPTICAL               (1)
 #endif
 
 #if(OPTICAL)
@@ -45,8 +39,6 @@ on tile[0]: out           port    p_pll_ref       = PORT_PLL_REF;
 /* Note, buffer index wrap code assumes this is a power of 2 */
 #define SAMPLE_BUFF_SIZE 16
 #endif
-
-#define SAMPLE_COUNT ((48000/300))
 
 /* The number of timer ticks to wait for the audio PLL to lock */
 /* CS2100 lists typical lock time as 100 * input period */
@@ -116,10 +108,6 @@ void audio_hw_setup(client interface i2c_master_if i2c)
 
 }
 
-//static const unsigned g_sampRate = 48000;
-//static const unsigned g_mclk = 48000 * 256;
-
-
 void board_setup(void)
 {
     set_port_drive_high(p_ctrl);
@@ -162,9 +150,6 @@ void buffer_control(streaming chanend c_spdif, server i2s_frame_callback_if i_i2
     //int sampleCount = 0;
 
     p_pll_ref <: refClkVal;
-
-    //c_i2s <: 0;
-    //c_i2s <: 0;
 
     while(1)
     {
@@ -223,39 +208,27 @@ void buffer_control(streaming chanend c_spdif, server i2s_frame_callback_if i_i2
         
             break;
             case i_i2s.init(i2s_config_t &?i2s_config, tdm_config_t &?tdm_config):
-              //i2s_config.mclk_bclk_ratio = (MASTER_CLOCK_FREQUENCY / (SAMPLE_FREQUENCY*2*DATA_BITS));
-              i2s_config.mclk_bclk_ratio = 2;
-              i2s_config.mode = I2S_MODE_I2S;
-              // Complete setup
-              break;
+                //i2s_config.mclk_bclk_ratio = (MASTER_CLOCK_FREQUENCY / (SAMPLE_FREQUENCY*2*DATA_BITS));
+                i2s_config.mclk_bclk_ratio = 2;
+                i2s_config.mode = I2S_MODE_I2S;
+                // Complete setup
+                break;
             case i_i2s.restart_check() -> i2s_restart_t restart:
-              // Inform the I2S slave whether it should restart or exit
-              restart = I2S_NO_RESTART;
-              break;
+                // Inform the I2S slave whether it should restart or exit
+                restart = I2S_NO_RESTART;
+                break;
             case i_i2s.receive(size_t n_chans, int32_t in_samps[n_chans]):
-              break;
+                break;
             case i_i2s.send(size_t num_out, int32_t samples[num_out]):
-              // Provide a sample to send
-              //break;
-            /* i2s requests a sample */
-            //case c_i2s :> int _:
-                //c_i2s :> int _;    
-                
-
+                // Provide a sample to send
                 if(buffState == BUFF_STATE_UNDERFLOW)
                 {
                     /* Underflowing - send back 0's */
-                    //for(int i = 0; i < I2S_MASTER_NUM_CHANS_DAC; i++)
-                    //{   
-                        //c_i2s <: 0;
-                        samples[0] = 0;
-                        samples[1] = 0;
-                    //}    
+                    samples[0] = 0;
+                    samples[1] = 0;
                 }
                 else
                 {
-                    //c_i2s <: sampleBuffer[readPtr++];
-                    //c_i2s <: sampleBuffer[readPtr++];
                     samples[0] = sampleBuffer[readPtr++];
                     samples[1] = sampleBuffer[readPtr++];
 
@@ -279,6 +252,21 @@ void buffer_control(streaming chanend c_spdif, server i2s_frame_callback_if i_i2
     }
 }
 
+// Dummy threads for performance testing.
+void dummy_thread(int thread)
+{
+    unsigned i=0;
+
+    while(1)
+    {
+        i+=4;
+        if (i == 0)
+        {
+            printf("thread %d\n", thread);
+        }
+    }
+}
+
 int main()
 {
     streaming chan c_spdif;
@@ -294,6 +282,12 @@ int main()
           spdif_rx(c_spdif, p_spdif_rx, clk_spdif_rx, SAMPLE_FREQUENCY);
         }
         on tile[0]: buffer_control(c_spdif, i_i2s);
+        on tile[0]: dummy_thread(0);
+        on tile[0]: dummy_thread(1);
+        on tile[0]: dummy_thread(2);
+        on tile[0]: dummy_thread(3);
+        on tile[0]: dummy_thread(4);
+        on tile[0]: dummy_thread(5);
         on tile[0]: i2c_master(i_i2c, 1, p_scl, p_sda, 100);
         on tile[1]: i2s_frame_master(i_i2s, p_dout, 1, NULL, 0, DATA_BITS, p_bclk, p_lrclk, p_mclk, clk_bclk);
     }
