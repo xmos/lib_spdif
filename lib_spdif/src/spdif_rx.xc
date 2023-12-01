@@ -26,14 +26,13 @@ void spdif_rx_shutdown(streaming chanend c)
     sinct(c);
 }
 
-int spdif_rx_441(streaming chanend c, buffered in port:32 p);
-int spdif_rx_48(streaming chanend c, buffered in port:32 p);
+int spdif_rx_decode(streaming chanend c, buffered in port:32 p, unsigned sample_rate);
 int check_clock_div(buffered in port:32 p);
 
 void spdif_rx(streaming chanend c, in port p, clock clk, unsigned sample_freq_estimate)
 {
     unsigned sample_rate = sample_freq_estimate;
-    int exit;
+    int exit = 0;
 
     in port * movable pp = &p;
     in buffered port:32 * movable p_buf = reconfigure_port(move(pp), in buffered port:32);
@@ -57,12 +56,7 @@ void spdif_rx(streaming chanend c, in port p, clock clk, unsigned sample_freq_es
 
         // Check our clock div value is correct
         if (check_clock_div(*p_buf) == 0)
-        {
-            if(sample_rate % 44100)
-                exit = spdif_rx_48(c, *p_buf);
-            else
-                exit = spdif_rx_441(c, *p_buf);
-        }
+           exit = spdif_rx_decode(c, *p_buf, sample_rate);
 
         if(exit)
             break;
