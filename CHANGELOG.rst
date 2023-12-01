@@ -6,6 +6,7 @@ UNRELEASED
 
   * ADDED:     Support for XCommon CMake build system
   * ADDED:     Support for transmit at 32kHz
+  * RESOLVED:  Coding optimisations not propertly enabled in receiver
 
 6.0.0
 -----

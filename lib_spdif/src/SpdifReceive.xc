@@ -1,6 +1,5 @@
 // Copyright 2023 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
-
 #include <xs1.h>
 #include <xclib.h>
 #include <stdint.h>
@@ -10,7 +9,7 @@
 static inline int cls(int idata)
 {
     int x;
-#if __XS3A__
+#ifdef __XS3A__
     asm volatile("cls %0, %1" : "=r"(x)  : "r"(idata));
 #else
     x = (clz(idata) + clz(~idata));
@@ -22,7 +21,7 @@ static inline int xor4(int idata1, int idata2, int idata3, int idata4)
 {
     int x;
 
-#if !defined(__XS3A__) || !defined(__XS2A__)
+#ifdef __XS1B__
     /* For doc build only */
     x = idata1 ^ idata2 ^ idata3 ^ idata4;
 #else
