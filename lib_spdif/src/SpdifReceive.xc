@@ -4,13 +4,12 @@
 #include <xs1.h>
 #include <xclib.h>
 #include <stdint.h>
-
 #include "spdif.h"
 
 static inline int cls(int idata)
 {
     int x;
-#if __XS3A__
+#ifdef __XS3A__
     asm volatile("cls %0, %1" : "=r"(x)  : "r"(idata));
 #else
     x = (clz(idata) + clz(~idata));
@@ -22,7 +21,7 @@ static inline int xor4(int idata1, int idata2, int idata3, int idata4)
 {
     int x;
 
-#if !defined(__XS3A__) || !defined(__XS2A__)
+#ifdef __XS1B__
     /* For doc build only */
     x = idata1 ^ idata2 ^ idata3 ^ idata4;
 #else
@@ -40,49 +39,60 @@ static inline int xor4(int idata1, int idata2, int idata3, int idata4)
 // Above an index of 6 we apply a max limit to the error to avoid port INs missing timing (this level of error only used during initial lock)
 const int error_lookup[33] = {-152,-88,-24,40,104,168,232,232,232,232,232,232,232,232,232,232,232,232,232,232,232,232,232,232,232,232,232,232,232,232,232,232,232};
 
-#pragma unsafe arrays
-static inline void spdif_rx_8UI_48(buffered in port:32 p, unsigned &t, unsigned &sample, unsigned &outword, unsigned &adder)
-{
-    // 48k standard
-    const unsigned unscramble_0x04040404_0xF[16] = {
-    0x80000000, 0x90000000, 0xC0000000, 0xD0000000,
-    0x70000000, 0x60000000, 0x30000000, 0x20000000,
-    0xA0000000, 0xB0000000, 0xE0000000, 0xF0000000,
-    0x50000000, 0x40000000, 0x10000000, 0x00000000};
+// 48k mask dehash lookup
+const char dehash_0x04040404_0xF[16] = {8, 9, 12, 13, 7, 6, 3, 2, 10, 11, 14, 15, 5, 4, 1, 0};
 
-    asm volatile("in %0, res[%1]" : "=r"(sample)  : "r"(p));  // Input data sample
-    t += adder;                                               // Add current adder value to the time for next input
-    asm volatile("setpt res[%0], %1"::"r"(p),"r"(t>>16));     // Write that time to the port
-    unsigned crc = sample & 0x04040404;                       // Apply a mask to sample the data bits we want
-    crc32(crc, 0xF, 0xF);                                     // Use crc as a hash function to produce a unique 4 bit value based off value of sampled bits
-    outword >>= 4;                                            // Shift output word by 4 to make room for new data
-    outword |= unscramble_0x04040404_0xF[crc];                // OR the sampled data bits into the output word using a de-hash lookup table from the crc value.
-}
+// 44.1k mask dehash lookup
+const char dehash_0x08040201_0xF[16] = {15, 7, 11, 3, 13, 5, 9, 1, 14, 6, 10, 2, 12, 4, 8, 0};
 
 #pragma unsafe arrays
-static inline void spdif_rx_8UI_441(buffered in port:32 p, unsigned &t, unsigned &sample, unsigned &outword, unsigned &adder)
+static inline void spdif_rx_8UI(buffered in port:32 p, unsigned &t, unsigned &sample, unsigned &outword, unsigned &adder, unsigned &mask, unsigned *dehash)
 {
-    // 44.1k standard
-    const unsigned unscramble_0x08040201_0xF[16] = {
-    0xF0000000, 0x70000000, 0xB0000000, 0x30000000,
-    0xD0000000, 0x50000000, 0x90000000, 0x10000000,
-    0xE0000000, 0x60000000, 0xA0000000, 0x20000000,
-    0xC0000000, 0x40000000, 0x80000000, 0x00000000};
-
     asm volatile("in %0, res[%1]" : "=r"(sample)  : "r"(p));  // Input data sample
     t += adder;                                               // Add current adder value to the time for next input
     asm volatile("setpt res[%0], %1"::"r"(p),"r"(t>>16));     // Write the top 16 bits of that 16.16 fixed point time to the port
-    unsigned crc = sample & 0x08040201;                       // Apply a mask to sample the data bits we want
+    unsigned crc = sample & mask;                             // Apply a mask to sample the data bits we want
     crc32(crc, 0xF, 0xF);                                     // Use crc as a hash function into a unique 4 bit value based off value of sampled bits
     outword >>= 4;                                            // Shift output word by 4 to make room for new data
-    outword |= unscramble_0x08040201_0xF[crc];                // OR the sampled data bits into the output word using a de-hash lookup table from the crc value
+    outword |= dehash[crc];                                   // OR the sampled data bits into the output word using a de-hash lookup table from the crc value
 }
 
 #pragma unsafe arrays
-static inline void spdif_rx_lock(buffered in port:32 p, unsigned &t, unsigned &adder)
+int spdif_rx_decode(streaming chanend c, buffered in port:32 p, unsigned sample_rate)
 {
-    unsigned sample, raw_err;
+    unsigned sample;
+    unsigned outword = 0;
+    unsigned z_pre_sample = 0;
+    unsigned unlock_cnt = 0;
+    unsigned t;
+    unsigned adder, mask, z_pre_len;
+    unsigned dehash[16];
+    unsigned raw_err;
     unsigned pre_count = 0;
+    unsigned char tmp; // used in exit function
+
+    if ((sample_rate % 11025) == 0) // 44.1 based rates
+    {
+        adder = 2321995; // ideal 44.1 (35.430 * 65536)
+        z_pre_len = 9;
+        mask = 0x08040201;
+        for(int i=0;i<16;i++)
+            dehash[i] = dehash_0x08040201_0xF[i] << 28;
+    }
+    else if ((sample_rate % 16000) == 0) // 48 based rates
+    {
+        adder = 2133333; // ideal 48.0 (32.552 * 65536)
+        z_pre_len = 8;
+        mask = 0x04040404;
+        for(int i=0;i<16;i++)
+            dehash[i] = dehash_0x04040404_0xF[i] << 28;
+    }
+    else // Sample rate not supported
+    {
+        return 1;
+    }
+
+    // Start by locking local clock freq (adder) and phase (t) to input stream.
 
     // Read the port counter and add a bit.
     p :> void @ t; // read port counter
@@ -114,37 +124,22 @@ static inline void spdif_rx_lock(buffered in port:32 p, unsigned &t, unsigned &a
     }
 
     if (pre_count < 16)
-       t += (17<<15); // 8.5
+       t += (17<<15); // 8.5 bump if we were locked to wrong edge
 
     // Set the new port time ready for the first IN.
     asm volatile("setpt res[%0], %1"::"r"(p),"r"(t>>16));
-}
-
-#pragma unsafe arrays
-int spdif_rx_48(streaming chanend c, buffered in port:32 p)
-{
-    unsigned sample;
-    unsigned outword = 0;
-    unsigned z_pre_sample = 0;
-    unsigned unlock_cnt = 0;
-    unsigned t;
-    unsigned adder = 2133333; // ideal 48 (32.552 * 65536)
-    unsigned char tmp;
-
-    // Run function to lock to input stream, retain port time and adder to be used directly below.
-    spdif_rx_lock(p, t, adder);
 
     // Now receive data
     while(unlock_cnt < 32)
     {
-        spdif_rx_8UI_48(p, t, sample, outword, adder);
+        spdif_rx_8UI(p, t, sample, outword, adder, mask, dehash);
         if (cls(sample) > 9) // Last three bits of old subframe and first "bit" of preamble.
         {
             outword = xor4(outword, (outword << 1), 0xFFFFFFFF, z_pre_sample); // This achieves the xor decode plus inverting the output in one step.
             outword <<= 1;
             c <: outword;
 
-            spdif_rx_8UI_48(p, t, sample, outword, adder);
+            spdif_rx_8UI(p, t, sample, outword, adder, mask, dehash);
             z_pre_sample = sample;
             // Measure the position of reference edge and apply correction to PLL.
             unsigned ref_tran = cls(sample<<9);
@@ -153,91 +148,34 @@ int spdif_rx_48(streaming chanend c, buffered in port:32 p)
                 unlock_cnt++;
             adder -= raw_err;
             t -= raw_err<<6;
-            spdif_rx_8UI_48(p, t, sample, outword, adder);
-            spdif_rx_8UI_48(p, t, sample, outword, adder);
-            spdif_rx_8UI_48(p, t, sample, outword, adder);
-            if (cls(z_pre_sample<<13) > 8)
+            spdif_rx_8UI(p, t, sample, outword, adder, mask, dehash);
+            spdif_rx_8UI(p, t, sample, outword, adder, mask, dehash);
+            spdif_rx_8UI(p, t, sample, outword, adder, mask, dehash);
+            if (cls(z_pre_sample<<13) > z_pre_len)
               z_pre_sample = 2;
             else
               z_pre_sample = 0;
-            spdif_rx_8UI_48(p, t, sample, outword, adder);
+            spdif_rx_8UI(p, t, sample, outword, adder, mask, dehash);
+            spdif_rx_8UI(p, t, sample, outword, adder, mask, dehash);
 
-            /* Check for exit */
             select
             {
                 case sinct_byref(c, tmp):
                     soutct(c, XS1_CT_END);
-                    return 1;
+                    unlock_cnt = 128; // Setting this value will cause exit of the while loop.
+                    break;
                 default:
                     break;
             }
 
-            spdif_rx_8UI_48(p, t, sample, outword, adder);
-            spdif_rx_8UI_48(p, t, sample, outword, adder);
+            spdif_rx_8UI(p, t, sample, outword, adder, mask, dehash);
         }
     }
 
-    return 0;
-}
-
-#pragma unsafe arrays
-int spdif_rx_441(streaming chanend c, buffered in port:32 p)
-{
-    unsigned sample;
-    unsigned outword = 0;
-    unsigned z_pre_sample = 0;
-    unsigned unlock_cnt = 0;
-    unsigned t;
-    unsigned adder = 2321995; // ideal 44.1 (35.430 * 65536).
-    unsigned char tmp;
-
-    // Run function to lock to input stream, retain port time and adder to be used directly below.
-    spdif_rx_lock(p, t, adder);
-
-    // Now receive data
-    while(unlock_cnt < 32)
-    {
-        spdif_rx_8UI_441(p, t, sample, outword, adder);
-        if (cls(sample) > 9) // Last three bits of old subframe and first "bit" of preamble.
-        {
-            outword = xor4(outword, (outword << 1), 0xFFFFFFFF, z_pre_sample); // This achieves the xor decode plus inverting the output in one step.
-            outword <<= 1;
-            c <: outword;
-
-            spdif_rx_8UI_441(p, t, sample, outword, adder);
-            z_pre_sample = sample;
-            // Measure the position of reference edge and apply correction to PLL.
-            unsigned ref_tran = cls(sample<<9);
-            int raw_err = error_lookup[ref_tran];
-            if (ref_tran > 5)
-                unlock_cnt++;
-            adder -= raw_err;
-            t -= raw_err<<6;
-            spdif_rx_8UI_441(p, t, sample, outword, adder);
-            spdif_rx_8UI_441(p, t, sample, outword, adder);
-            spdif_rx_8UI_441(p, t, sample, outword, adder);
-            if (cls(z_pre_sample<<13) > 9)
-              z_pre_sample = 2;
-            else
-              z_pre_sample = 0;
-            spdif_rx_8UI_441(p, t, sample, outword, adder);
-
-            /* Check for exit */
-            select
-            {
-                case sinct_byref(c, tmp):
-                    soutct(c, XS1_CT_END);
-                    return 1;
-                default:
-                    break;
-            }
-
-            spdif_rx_8UI_441(p, t, sample, outword, adder);
-            spdif_rx_8UI_441(p, t, sample, outword, adder);
-        }
-    }
-
-    return 0;
+    if (unlock_cnt == 128)
+        return 1; // Return due to request from channel
+    else
+        return 0; // Return due to too many timing errors
 }
 
 // This function checks the input signal is approximately the correct sample rate for the given mode/clock setting.
@@ -282,4 +220,3 @@ int check_clock_div(buffered in port:32 p)
     }
     return 1;
 }
-
