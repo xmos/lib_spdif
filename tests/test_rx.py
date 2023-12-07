@@ -24,7 +24,7 @@ QUICK_START_OFFSET = 0
 
 # Due to the startup / lock phase there needs to be a long enough stream sent to the sim to so
 # that it can compleat the test while still receiving data
-NO_OF_TEST_FRAMES = 4
+NO_OF_TEST_FRAMES = 7
 
 DUMMY_THREADS = [0,1,2,3,4,5,6]
 SAM_FREQS = [44100,48000,88200,96000,176400,192000]
