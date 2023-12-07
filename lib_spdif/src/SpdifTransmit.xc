@@ -58,6 +58,36 @@ static inline unsigned biphase_encode(unsigned data_in)
     return zip(residual >> 1, ~residual, 0);
 }
 
+// Takes the least significant 16 bits of inword, maps each input bit to 6 output bits to produce three 32 bit words which are output to the port.
+#pragma unsafe arrays
+static inline void zip_out_6(out buffered port:32 p, unsigned inword)
+{
+    unsigned outword[3] = {0}; // Initialise our 3 output words to zero.
+    for(int i=0; i<16; i++) // Loop over LS 16 bits
+    {
+        unsigned out_shift_cnt = i*6; // Tracking where we want to be in chunks of 6 bits
+        unsigned out_shift_cnt_mod = out_shift_cnt % 32;
+        unsigned out_shift_cnt_div = out_shift_cnt >> 5; // equiv to /32
+        unsigned mask = 1 << i; // Create a single bit mask at the input bit we want to process
+        if ((inword & mask) != 0) // Input bit is 1
+        {
+            outword[out_shift_cnt_div] |= (0x3F << out_shift_cnt_mod); // Set the 6 output bits at the correct position
+            // Two special cases where the 6 output bits will cross a 32 bit word boundary.
+            // Manually set the LS bits that cross over into the next output word.
+            if (i == 5)
+                outword[1] |= 0xF;
+            else if (i == 10)
+                outword[2] |= 0x3;
+        }
+        // Output words to port as soon as they are ready
+        if (i == 5)
+            p <: outword[0];
+        else if (i == 10)
+            p <: outword[1];
+    }
+    p <: outword[2];
+}
+
 static inline void output_word(out buffered port:32 p, unsigned encoded_word, int divide)
 {
     switch(divide)
@@ -86,6 +116,11 @@ static inline void output_word(out buffered port:32 p, unsigned encoded_word, in
             final = zip(tmp_1, tmp_1, 1); // Make a 64 bit word from two copies of 32 bit input word
             p <: (unsigned int) final;
             p <: (unsigned int) (final >> 32);
+            break;
+        case 6:
+            /* E.g. 24.576MHz -> 32kHz */
+            zip_out_6(p,  encoded_word       ); // Output LS 16 bits as 3*32bit words
+            zip_out_6(p, (encoded_word >> 16)); // Output MS 16 bits as 3*32bit words
             break;
         default:
             /* Mclk does not support required sample freq - unreachable due to previous error checks */
@@ -218,6 +253,7 @@ void SpdifTransmitError(chanend c_in)
 #define CHAN_STAT_L        (0x00107A04)
 #define CHAN_STAT_R        (0x00207A04)
 
+#define CHAN_STAT_32000    (0x03000000)
 #define CHAN_STAT_44100    (0x00000000)
 #define CHAN_STAT_48000    (0x02000000)
 #define CHAN_STAT_88200    (0x08000000)
@@ -253,6 +289,11 @@ void spdif_tx(buffered out port:32 p, chanend c_in)
         /* Create channel status words based on sample freq */
         switch(samFreq)
         {
+            case 32000:
+                chanStat_L[0] = CHAN_STAT_L | CHAN_STAT_32000;
+                chanStat_R[0] = CHAN_STAT_R | CHAN_STAT_32000;
+                break;
+
             case 44100:
                 chanStat_L[0] = CHAN_STAT_L | CHAN_STAT_44100;
                 chanStat_R[0] = CHAN_STAT_R | CHAN_STAT_44100;
@@ -294,7 +335,7 @@ void spdif_tx(buffered out port:32 p, chanend c_in)
         /* Calculate required divide */
         divide = mclkFreq / (samFreq * 2 * 32 * 2);
 
-        if((divide != 1) && (divide != 2) && (divide != 4))
+        if((divide != 1) && (divide != 2) && (divide != 4) && (divide != 6))
             error++;
 
         if(error)
