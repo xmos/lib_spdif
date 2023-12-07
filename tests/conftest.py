@@ -13,3 +13,8 @@ def pytest_collection_modifyitems(config, items):
 
     config.hook.pytest_deselected(items=deselected)
     items[:] = selected
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "uncollect_if(*, func) : function to deselect tests from parametrization"
+    )
