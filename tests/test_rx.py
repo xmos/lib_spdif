@@ -24,14 +24,15 @@ QUICK_START_OFFSET = 0
 
 # Due to the startup / lock phase there needs to be a long enough stream sent to the sim to so
 # that it can compleat the test while still receiving data
-NO_OF_TEST_FRAMES = 7
+NO_OF_TEST_BLOCKS = 7
 
 DUMMY_THREADS = [0,1,2,3,4,5,6]
 SAM_FREQS = [44100,48000,88200,96000,176400,192000]
 CONFIGS = ["xs2","xs3"]
 
 STREAMS = [
-    Recorded_stream("48KHz_at_100MHz_fixed.stream", [["fixed", 0xEC8137], ["fixed", 0x137EC8]], 48*KHz, 100*MHz)
+    # Recorded_stream("48KHz_at_100MHz_fixed.stream", [["fixed", 0xEC8137], ["fixed", 0x137EC8]], 48*KHz, 100*MHz),
+    Recorded_stream("48KHz_at_100MHz_ramp.stream", [["ramp", 7], ["ramp", -5]], 48*KHz, 100*MHz)
 ]
 
 def spdif_rx_uncollect(config, sam_freq, sample_freq_estimate, dummy_threads):
@@ -72,7 +73,7 @@ def test_spdif_rx(capfd, config, sam_freq, sample_freq_estimate, dummy_threads):
         ["ramp", 5],
     ]
 
-    frames = Frames(channels=audio, no_of_frames=NO_OF_TEST_FRAMES, sam_freq=sam_freq)
+    frames = Frames(channels=audio, no_of_blocks=NO_OF_TEST_BLOCKS, sam_freq=sam_freq)
     out = frames.stream(quick_start_offset=QUICK_START_OFFSET)
     tester = testers.ComparisonTester("PASS")
     simthreads = [
@@ -113,7 +114,7 @@ def test_spdif_rx_stream(config, stream, dummy_threads, capfd):
 
     no_of_samples = 192
 
-    frames = Frames(channels=stream.audio, no_of_frames=NO_OF_TEST_FRAMES, sam_freq=stream.sam_freq)
+    frames = Frames(channels=stream.audio, no_of_blocks=NO_OF_TEST_BLOCKS, sam_freq=stream.sam_freq)
 
     file_path = str(Path(__file__).parent / "test_rx" / "streams" / stream.file_name)
     file = open(file_path, "rb")

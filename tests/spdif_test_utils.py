@@ -58,10 +58,10 @@ class Spdif_rx(Clock):
                     os._exit(os.EX_OK)
 
 class Port_monitor(SimThread):
-    def __init__(self, p_debug: str, p_debug_strobe: str, no_of_samples: int,print_frame=True, check_frames=None):
+    def __init__(self, p_debug: str, p_debug_strobe: str, no_of_samples=None ,print_frame=True, check_frames=None):
         self._p_debug = p_debug
         self._p_debug_strobe = p_debug_strobe
-        self._no_of_samples = no_of_samples *2 #should be * number of channels
+        self._no_of_samples = None if no_of_samples == None else no_of_samples *2 #should be * number of channels
         self._print_frame = print_frame
         self._check_frames = check_frames
 
@@ -69,7 +69,7 @@ class Port_monitor(SimThread):
         found = 0
         frames = []
         init_values = (self._check_frames == None)
-        while (found < self._no_of_samples):
+        while (self._no_of_samples == None or found < self._no_of_samples):
             self.wait_for_port_pins_change([self._p_debug_strobe])
             if self.xsi.sample_port_pins(self._p_debug_strobe) == 1:
                 debug = self.xsi.sample_port_pins(self._p_debug)
@@ -125,7 +125,7 @@ class Frames():
             self,
             sources = None,
             channels = None,
-            no_of_frames = 0,
+            no_of_blocks = 0,
             #byte 0
             pro=False,
             digital_audio=True,
@@ -147,7 +147,7 @@ class Frames():
             extra=None, # List of bytes
         ):
         # self.expect = ""
-        self._no_of_samples = no_of_frames * 192
+        self._no_of_samples = no_of_blocks * 192
         self._samples = None
         self._initial_values = []
         if sources != None:
