@@ -1,3 +1,6 @@
+# Copyright 2014-2024 XMOS LIMITED.
+# This Software is subject to the terms of the XMOS Public Licence: Version 1.
+
 from pathlib import Path
 
 # open input file (list of ints)
