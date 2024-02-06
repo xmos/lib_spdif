@@ -1,4 +1,4 @@
-// Copyright 2023 XMOS LIMITED.
+// Copyright 2023-2024 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 #include <xs1.h>
 #include <xclib.h>
@@ -125,6 +125,23 @@ int spdif_rx_decode(streaming chanend c, buffered in port:32 p, unsigned sample_
     if (pre_count < 16)
        t += (17<<15); // 8.5 bump if we were locked to wrong edge
 
+    // We then run loop again for a fixed time counting preambles.
+    pre_count = 0;
+    for(int i = 0; i < 512;i++)
+    {
+        asm volatile("setpt res[%0], %1"::"r"(p),"r"(t>>16));
+        if (cls(sample) > 9)
+          pre_count++;
+        asm volatile("in %0, res[%1]" : "=r"(sample)  : "r"(p));
+        raw_err = error_lookup[cls(sample<<9)];
+        adder -= raw_err;
+        t += adder - (raw_err<<9);
+    }
+
+    // Check preambles are there, if not we quit. We should have ~64 preambles in 512 input samples.
+    if (pre_count < 60)
+       return 0;
+
     // Set the new port time ready for the first IN.
     asm volatile("setpt res[%0], %1"::"r"(p),"r"(t>>16));
 
@@ -148,6 +165,8 @@ int spdif_rx_decode(streaming chanend c, buffered in port:32 p, unsigned sample_
             adder -= raw_err;
             t -= raw_err<<6;
             spdif_rx_8UI(p, t, sample, outword, adder, mask, dehash);
+            if (cls(sample<<13) > 9) // Check pulse length of pulse leading up to reference transition. If too long our clock is too fast so add to error and eventually quit.
+                unlock_cnt++;
             spdif_rx_8UI(p, t, sample, outword, adder, mask, dehash);
             spdif_rx_8UI(p, t, sample, outword, adder, mask, dehash);
             if (cls(z_pre_sample<<13) > z_pre_len)
@@ -169,6 +188,8 @@ int spdif_rx_decode(streaming chanend c, buffered in port:32 p, unsigned sample_
 
             spdif_rx_8UI(p, t, sample, outword, adder, mask, dehash);
         }
+        else // shoudn't get here in normal operation, means we've missed a preamble.
+            unlock_cnt++;
     }
 
     if (unlock_cnt == 128)
