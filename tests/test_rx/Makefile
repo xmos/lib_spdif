@@ -28,7 +28,6 @@ XCC_FLAGS_xs3 = $(EXTRA_BUILD_FLAGS) -O0 -g -save-temps
 # The USED_MODULES variable lists other module used by the application.
 USED_MODULES = lib_spdif
 
-
 #=============================================================================
 # The following part of the Makefile includes the common build infrastructure
 # for compiling XMOS applications. You should not need to edit below here.

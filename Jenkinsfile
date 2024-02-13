@@ -12,6 +12,8 @@ pipeline {
   }
   options {
     skipDefaultCheckout()
+    timestamps()
+    buildDiscarder(xmosDiscardBuildSettings())
   }
   stages {
     stage('Get view') {

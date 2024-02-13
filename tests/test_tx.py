@@ -33,6 +33,9 @@ def spdif_tx_uncollect(config, sam_freq):
 
     return False
 
+#####
+# This test builds the spdif transmitter app with a verity of presets and tests that the output matches those presets
+#####
 @pytest.mark.uncollect_if(func=spdif_tx_uncollect)
 @pytest.mark.parametrize("sam_freq", SAM_FREQS)
 @pytest.mark.parametrize("config", CONFIGS)

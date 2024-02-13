@@ -53,6 +53,10 @@ def _get_duration(sam_freq,sample_freq_estimate):
     else:
         return 10
 
+#####
+# This test checks the receaver running in the simulator by providing it with a "perfect" signal at a variaty of sample rate,
+# expected sample rate and busy "dummy threads"
+#####
 @pytest.mark.uncollect_if(func=spdif_rx_uncollect)
 @pytest.mark.parametrize("dummy_threads", DUMMY_THREADS)
 @pytest.mark.parametrize("sample_freq_estimate", SAM_FREQS)
@@ -101,6 +105,9 @@ def test_spdif_rx(capfd, config, sam_freq, sample_freq_estimate, dummy_threads):
         )
     assert result
 
+#####
+# Tests the receiver against over sampled bit representations of real world spdif streams
+#####
 @pytest.mark.uncollect_if(func=spdif_rx_stream_uncollect)
 @pytest.mark.parametrize("dummy_threads", DUMMY_THREADS)
 @pytest.mark.parametrize("stream", STREAMS)

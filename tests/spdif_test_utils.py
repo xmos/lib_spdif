@@ -4,6 +4,10 @@
 from Pyxsim import SimThread
 import os
 
+#####
+# These tests analyse the transitions rather than the pin value
+# eg. '011101000' or '100010111' -> '10011100'
+#####
 PREAMBLE_Z = "10011100"
 PREAMBLE_X = "10010011"
 PREAMBLE_Y = "10010110"
@@ -15,6 +19,11 @@ def extract_preamble(subframe: int):
     pre = "Z" if pre == 0x8 else "X" if pre == 0xC else "Y" if pre == 0x0 else "{0:02b}".format(pre >> 2)
     return pre
 
+#####
+# A SimThread to drive a clock signal on a port.
+# Note: the frequency is how often to toggle the port so clocking the port
+#       once a second will produce a signal with a 2 second period
+#####
 class Clock(SimThread):
     def __init__(self,port: str,freq_Hz: int, polarity = 0):
         self._pin = polarity
@@ -35,6 +44,9 @@ class Clock(SimThread):
         self._interval_carry = (tick + self._interval_carry) % self._freq_Hz
         return interval
 
+#####
+# Python spdif receiver, used for testing the output from the spdif transmitter running in the simulator.
+#####
 class Spdif_rx(Clock):
     def __init__(self,port: str, sam_freq: int, no_of_samples: int):
         super().__init__(port, sam_freq)
@@ -57,13 +69,17 @@ class Spdif_rx(Clock):
                 if sample_counter >= self._no_of_samples:
                     os._exit(os.EX_OK)
 
+#####
+# Monitors a 32bit wide port which the xe in the simulator is using to "display" how it has interpreted spdif data
+# to the outside world.
+#####
 class Port_monitor(SimThread):
     def __init__(self, p_debug: str, p_debug_strobe: str, no_of_samples=None ,print_frame=True, check_frames=None):
-        self._p_debug = p_debug
-        self._p_debug_strobe = p_debug_strobe
+        self._p_debug = p_debug                # 32 bit port the xe file is outputting data on
+        self._p_debug_strobe = p_debug_strobe  # 1 bit port the xe using to show new data on the debug port
         self._no_of_samples = None if no_of_samples == None else no_of_samples *2 #should be * number of channels
-        self._print_frame = print_frame
-        self._check_frames = check_frames
+        self._print_frame = print_frame        # Print the frames to the terminal as they are received
+        self._check_frames = check_frames      # Frames() to check against if internal checking is required
 
     def run(self):
         found = 0
@@ -97,16 +113,15 @@ class Port_monitor(SimThread):
                 print("PASS")
         os._exit(os.EX_OK)
 
-    def check(self):
-        return False
-    def check_value(self):
-        return None
 
+#####
+# Python transmitter used to drive a bit representation of spdif data into the simulator
+#####
 class Spdif_tx(Clock):
     def __init__(self, port: str, freq_Hz: int, out: bytearray, trigger_pin=None, polarity=0):
         super().__init__(port, freq_Hz, polarity)
-        self._bytes = out
-        self._trigger_pin = trigger_pin
+        self._bytes = out               # byte array to drive on the given pin at the given frequency
+        self._trigger_pin = trigger_pin # If provided with a pin it will wait for a ready signal from the xe before transmitting
 
     def run(self):
         if self._trigger_pin != None:
@@ -120,6 +135,23 @@ class Spdif_tx(Clock):
                     bit = (byte >> i) & 0x1
                     self.xsi.drive_port_pins(self._port, bit)
 
+#####
+# The Frames class constructs an S/PDIF signal either to feed into the simulator to test
+# the receiver or to check an output against.
+# TODO - this class currently uses strings, it would probably be better to use a byte array
+#
+# .log_initial_value( int value )
+#          used by Port_monitor after the first frame has been observed so that when
+#          .expect() is called to check checks are conducted against a matching 
+#
+# .expect()
+#          outputs an array of strings representing the expected decoded spdif signal
+#
+# .stream()
+#          outputs a byte array representing the spdif signal that can be driven on a pin for
+#          the simulator to decode back into spdif data
+#
+#####
 class Frames():
     def __init__(
             self,
@@ -224,7 +256,7 @@ class Frames():
         byte += "00"
         return byte
     def _get_byte_4(self, bit_depth, original_sam_freq):
-        #there are 2 options for 20bits this needs sorting for tests that involve 20 bit depth
+        #there are 2 options for 20bits this needs sorting for tests that involve a bit depth of 20
         byte = ""
         byte += "1" if bit_depth > 20 else "0"
         if bit_depth in [20,16]:
@@ -301,11 +333,23 @@ class Frames():
             stream += byte.to_bytes(8, "little")
         return stream
 
+#####
+# Provides a single place that determines how sub-frames are displayed. Takes a sample number and the subframe
+# and outputs that as a string for printing and checking against.
+#####
 def sub_frame_string(sample_no,subframe):
     pre = subframe[:8]
     pre = "Z" if pre == PREAMBLE_Z else "X" if pre == PREAMBLE_X else "Y" if pre == PREAMBLE_Y else pre
     return f"{sample_no} [{pre}] - {subframe[9::2]} {subframe[8::2]}"
 
+#####
+# Audio_func provides a class that can be given a type of test signal, fixed, ramp, none etc. and a control value
+# and output what the next sample value should be based off the previous sample value by calling .next(previous)
+# 
+# The way the control value is used depends on the function type. Eg. ("ramp", 5) will output the previous value + 5
+# and ("fixed", 5) will output 5 no matter what the previous value is. Future additions could be ("sine", value)
+# where the control value is used to characterize the sine wave.
+#####
 class Audio_func():
     def __init__(self, type="none", value=0):
         _type = type.lower()
@@ -328,13 +372,19 @@ class Audio_func():
     def _ramp(self, previous):
         return (previous + self._value) if previous != None else None
 
+#####
+# Recorded_stream hold metadata about a bit stream representation of spdif data
+#####
 class Recorded_stream():
     def __init__(self, file_name, audio, sam_freq, sample_rate):
-        self.file_name = file_name
-        self.audio = audio
-        self.sam_freq = sam_freq
-        self.sample_rate = sample_rate
+        self.file_name = file_name     # the binary file to be interpreted as an spdif signal
+        self.audio = audio             # Audio_func() describing the expected signal
+        self.sam_freq = sam_freq       # audio sample rate
+        self.sample_rate = sample_rate # signal sample rate
 
+#####
+# Returns the clock frequency for outputting audio at different sample rates
+#####
 def freq_for_sample_rate(sam_freq: int):
     freq_Hz = None
     no_of_channels = 2
