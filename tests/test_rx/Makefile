@@ -3,10 +3,10 @@
 # or a valid argument for the --target option when compiling.
 
 ifeq ($(CONFIG), xs2)
-	TARGET = XCORE-200-EXPLORER
+	TARGET = XCORE-200-EXPLORER-300.xn
 endif
 ifeq ($(CONFIG), xs3)
-	TARGET = XCORE-AI-EXPLORER
+	TARGET = XCORE-AI-EXPLORER-300.xn
 endif
 
 # The APP_NAME variable determines the name of the final .xe file. It should

@@ -26,7 +26,6 @@ QUICK_START_OFFSET = 0
 # that it can compleat the test while still receiving data
 NO_OF_TEST_BLOCKS = 7
 
-DUMMY_THREADS = [0,1,2,3,4,5,6]
 SAM_FREQS = [44100,48000,88200,96000,176400,192000]
 CONFIGS = ["xs2","xs3"]
 
@@ -35,16 +34,12 @@ STREAMS = [
     Recorded_stream("48KHz_at_100MHz_ramp.stream", [["ramp", 7], ["ramp", -5]], 48*KHz, 100*MHz)
 ]
 
-def spdif_rx_uncollect(config, sam_freq, sample_freq_estimate, dummy_threads):
+def spdif_rx_uncollect(config, sam_freq, sample_freq_estimate):
     if sam_freq != sample_freq_estimate:
-        return True
-    if sam_freq <176400 and dummy_threads != 0:
         return True
     return False
 
-def spdif_rx_stream_uncollect(config, stream, dummy_threads):
-    if dummy_threads not in [0,6]:
-        return True
+def spdif_rx_stream_uncollect(config, stream):
     return False
 
 def _get_duration(sam_freq,sample_freq_estimate):
@@ -58,11 +53,10 @@ def _get_duration(sam_freq,sample_freq_estimate):
 # expected sample rate and busy "dummy threads"
 #####
 @pytest.mark.uncollect_if(func=spdif_rx_uncollect)
-@pytest.mark.parametrize("dummy_threads", DUMMY_THREADS)
 @pytest.mark.parametrize("sample_freq_estimate", SAM_FREQS)
 @pytest.mark.parametrize("sam_freq", SAM_FREQS)
 @pytest.mark.parametrize("config", CONFIGS)
-def test_spdif_rx(capfd, config, sam_freq, sample_freq_estimate, dummy_threads):
+def test_spdif_rx(capfd, config, sam_freq, sample_freq_estimate):
     # time taken in the simulator to correct frequency currently too long for tests. Re-enable sample rate mismatch once resolved
     # sample_freq_estimate = sam_freq
 
@@ -100,7 +94,6 @@ def test_spdif_rx(capfd, config, sam_freq, sample_freq_estimate, dummy_threads):
             f"CONFIG={config}",
             "EXTRA_BUILD_FLAGS="
             +f" -DSAMPLE_FREQ_ESTIMATE={sample_freq_estimate}"
-            +f" -DTEST_DTHREADS={dummy_threads}"
             ],
         )
     assert result
@@ -109,10 +102,9 @@ def test_spdif_rx(capfd, config, sam_freq, sample_freq_estimate, dummy_threads):
 # Tests the receiver against over sampled bit representations of real world spdif streams
 #####
 @pytest.mark.uncollect_if(func=spdif_rx_stream_uncollect)
-@pytest.mark.parametrize("dummy_threads", DUMMY_THREADS)
 @pytest.mark.parametrize("stream", STREAMS)
 @pytest.mark.parametrize("config", CONFIGS)
-def test_spdif_rx_stream(config, stream, dummy_threads, capfd):
+def test_spdif_rx_stream(config, stream, capfd):
 
     xe = str(Path(__file__).parent / f"test_rx/bin/{config}/test_rx_{config}.xe")
     p_spdif_in          = "tile[0]:XS1_PORT_1E"
@@ -149,7 +141,6 @@ def test_spdif_rx_stream(config, stream, dummy_threads, capfd):
             f"CONFIG={config}",
             "EXTRA_BUILD_FLAGS="
             +f" -DSAMPLE_FREQ_ESTIMATE={stream.sam_freq}"
-            +f" -DTEST_DTHREADS={dummy_threads}"
             ],
         )
     assert result

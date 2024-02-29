@@ -1,4 +1,4 @@
-// Copyright 2014-2023 XMOS LIMITED.
+// Copyright 2014-2024 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 #include <xs1.h>
@@ -10,7 +10,6 @@
 #endif
 
 #ifndef TEST_DTHREADS
-#error TEST_DTHREADS not defined
 #define TEST_DTHREADS (0)
 #endif
 
@@ -24,6 +23,7 @@ on tile[0]: out             port    p_strobe_out    = XS1_PORT_1F;
 on tile[0]:                 clock   audio_clk       = XS1_CLKBLK_1;
 on tile[0]:                 clock   c_out           = XS1_CLKBLK_2;  
 
+
 void handle_samples(streaming chanend c, out buffered port:32 p_sim_out)
 {
     configure_out_port_strobed_master(p_sim_out, p_strobe_out, c_out, 0);
@@ -33,7 +33,9 @@ void handle_samples(streaming chanend c, out buffered port:32 p_sim_out)
     while(1)
     {
         c :> subframe;
-        p_sim_out  <: subframe;
+        if (!spdif_rx_check_parity(subframe)) {
+            p_sim_out  <: subframe;
+        }
     }
 }
 
