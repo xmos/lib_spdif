@@ -53,10 +53,27 @@ def spdif_rx_uncollect(config, sam_freq, sample_freq_estimate):
 
 
 def spdif_rx_stream_uncollect(config, stream):
+    # Until different test levels are added, only run these tests on xs3
+    if config == "xs2":
+        return True
     return False
 
 
 def spdif_rx_samfreq_change_uncollect(config, stream0, stream1):
+    def get_target_sam_freq(init_sam_freq, offset):
+        idx = SAM_FREQS.index(init_sam_freq)
+        target_idx = (idx + offset) % len(SAM_FREQS)
+        return SAM_FREQS[target_idx]
+
+    # Until different test levels are added, just run one change per sample rate per board
+    if config == "xs2":
+        target_sam_freq = get_target_sam_freq(stream0.sam_freq, 3)
+        if stream1.sam_freq != target_sam_freq:
+            return True
+    elif config == "xs3":
+        target_sam_freq = get_target_sam_freq(stream0.sam_freq, -1)
+        if stream1.sam_freq != target_sam_freq:
+            return True
     return False
 
 
