@@ -46,7 +46,7 @@ STREAMS = [
 ]
 
 
-def spdif_rx_uncollect(config, sam_freq, sample_freq_estimate):
+def rx_uncollect(config, sam_freq, sample_freq_estimate):
     # Until different test levels are added, only run these tests on xs3
     if config == "xs2":
         return True
@@ -56,11 +56,11 @@ def spdif_rx_uncollect(config, sam_freq, sample_freq_estimate):
     return False
 
 
-def spdif_rx_stream_uncollect(config, stream):
+def rx_stream_uncollect(config, stream):
     return False
 
 
-def spdif_rx_samfreq_change_uncollect(config, stream0, stream1):
+def rx_samfreq_change_uncollect(config, stream0, stream1):
     def get_target_sam_freq(init_sam_freq, offset):
         idx = SAM_FREQS.index(init_sam_freq)
         target_idx = (idx + offset) % len(SAM_FREQS)
@@ -98,11 +98,11 @@ def param_id(val):
 # This test checks the receiver running in the simulator by providing it with a "perfect" signal at different sample rates,
 # with different expected sample rates
 #####
-@pytest.mark.uncollect_if(func=spdif_rx_uncollect)
+@pytest.mark.uncollect_if(func=rx_uncollect)
 @pytest.mark.parametrize("sample_freq_estimate", SAM_FREQS)
 @pytest.mark.parametrize("sam_freq", SAM_FREQS)
 @pytest.mark.parametrize("config", CONFIGS)
-def test_spdif_rx(capfd, config, sam_freq, sample_freq_estimate):
+def test_rx(capfd, config, sam_freq, sample_freq_estimate):
     # time taken in the simulator to correct frequency currently too long for tests. Re-enable sample rate mismatch once resolved
     # sample_freq_estimate = sam_freq
 
@@ -152,10 +152,10 @@ def test_spdif_rx(capfd, config, sam_freq, sample_freq_estimate):
 #####
 # Tests the receiver against over sampled bit representations of real world spdif streams
 #####
-@pytest.mark.uncollect_if(func=spdif_rx_stream_uncollect)
+@pytest.mark.uncollect_if(func=rx_stream_uncollect)
 @pytest.mark.parametrize("stream", STREAMS, ids=param_id)
 @pytest.mark.parametrize("config", CONFIGS)
-def test_spdif_rx_stream(config, stream, capfd):
+def test_rx_stream(config, stream, capfd):
     xe = str(Path(__file__).parent / f"test_rx/bin/{config}/test_rx_{config}.xe")
     p_spdif_in = "tile[0]:XS1_PORT_1E"
     p_debug_out = "tile[0]:XS1_PORT_32A"
@@ -204,12 +204,12 @@ def test_spdif_rx_stream(config, stream, capfd):
 #####
 # Tests the receiver with a change of sample rate between a pair of recorded streams
 #####
-@pytest.mark.uncollect_if(func=spdif_rx_samfreq_change_uncollect)
+@pytest.mark.uncollect_if(func=rx_samfreq_change_uncollect)
 @pytest.mark.parametrize(
     ("stream0", "stream1"), itertools.permutations(STREAMS, 2), ids=param_id
 )
 @pytest.mark.parametrize("config", CONFIGS)
-def test_spdif_rx_samfreq_change(config, stream0, stream1, capfd):
+def test_rx_samfreq_change(config, stream0, stream1, capfd):
     xe = str(Path(__file__).parent / f"test_rx/bin/{config}/test_rx_{config}.xe")
     p_spdif_in = "tile[0]:XS1_PORT_1E"
     p_debug_out = "tile[0]:XS1_PORT_32A"

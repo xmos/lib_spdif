@@ -30,17 +30,17 @@ def _get_mclk_freq(sam_freq):
         assert False
 
 
-def spdif_tx_uncollect(config, sam_freq):
+def tx_uncollect(config, sam_freq):
     return False
 
 
 #####
 # This test builds the spdif transmitter app with a verity of presets and tests that the output matches those presets
 #####
-@pytest.mark.uncollect_if(func=spdif_tx_uncollect)
+@pytest.mark.uncollect_if(func=tx_uncollect)
 @pytest.mark.parametrize("sam_freq", SAM_FREQS)
 @pytest.mark.parametrize("config", CONFIGS)
-def test_spdif_tx(capfd, config, sam_freq):
+def test_tx(capfd, config, sam_freq):
     xe = str(Path(__file__).parent / f"test_tx/bin/{config}/test_tx_{config}.xe")
     p_clock = "tile[1]:XS1_PORT_1B"
     p_spdif_out = "tile[1]:XS1_PORT_1A"
