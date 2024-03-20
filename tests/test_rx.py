@@ -47,15 +47,16 @@ STREAMS = [
 
 
 def spdif_rx_uncollect(config, sam_freq, sample_freq_estimate):
+    # Until different test levels are added, only run these tests on xs3
+    if config == "xs2":
+        return True
+
     if sam_freq != sample_freq_estimate:
         return True
     return False
 
 
 def spdif_rx_stream_uncollect(config, stream):
-    # Until different test levels are added, only run these tests on xs3
-    if config == "xs2":
-        return True
     return False
 
 
