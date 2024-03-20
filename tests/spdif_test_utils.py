@@ -187,7 +187,6 @@ class Port_monitor(SimThread):
                         if self._print_frame:
                             print(frames[-1])
                         found += 1
-                        # print(f"found {found} - [{pre}] {sample}")
             return frames
 
         def check_block(frames, cf):
