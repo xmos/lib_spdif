@@ -1,10 +1,10 @@
-@Library('xmos_jenkins_shared_library@v0.21.0') _
+@Library('xmos_jenkins_shared_library@v0.29.0') _
 
 getApproval()
 
 pipeline {
   agent {
-    label 'x86_64&&macOS && !macOS_10_15'  // xdoc doesn't work on Catalina
+    label 'x86_64 && linux'
   }
   environment {
     REPO = 'lib_spdif'
@@ -12,6 +12,8 @@ pipeline {
   }
   options {
     skipDefaultCheckout()
+    timestamps()
+    buildDiscarder(xmosDiscardBuildSettings())
   }
   stages {
     stage('Get view') {
@@ -33,6 +35,17 @@ pipeline {
     //     }
     //   }
     // }
+    stage("Tests") {
+      steps {
+        dir("${REPO}/tests"){
+          viewEnv(){
+            withVenv() {
+              sh "pytest -v --junitxml=pytest_result.xml"
+            }
+          }
+        }
+      }
+    }
     stage('xCORE builds and doc') {
       steps {
         dir("${REPO}") {
@@ -45,6 +58,9 @@ pipeline {
     }
   }
   post {
+    always {
+      junit "${REPO}/tests/pytest_result.xml"
+    }
     success {
       updateViewfiles()
     }
