@@ -131,8 +131,8 @@ class Spdif_tx(Clock):
             stream = self._streams[idx]
             self._freq_Hz = stream._freq
             tx_bytes(stream._data, delay)
-            # Delay will be random; for now this is approximately two passes through the sample rate sweep
-            delay = 65e12
+            # TODO: make this delay random
+            delay = 35e12
 
     def trigger_thread(self):
         self._trigger_thread = True
