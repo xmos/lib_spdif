@@ -1,8 +1,8 @@
 lib_spdif Change Log
 ====================
 
-UNRELEASED
-----------
+6.1.0
+-----
 
   * ADDED:     Support for XCommon CMake build system
   * ADDED:     Support for transmit at 32kHz
