@@ -21,7 +21,7 @@ on tile[0]: out buffered    port:32 p_sim_out       = XS1_PORT_32A;
 on tile[0]: in              port    p_coax_rx       = XS1_PORT_1E;
 on tile[0]: out             port    p_strobe_out    = XS1_PORT_1F;
 on tile[0]:                 clock   audio_clk       = XS1_CLKBLK_1;
-on tile[0]:                 clock   c_out           = XS1_CLKBLK_2;  
+on tile[0]:                 clock   c_out           = XS1_CLKBLK_2;
 
 
 void handle_samples(streaming chanend c, out buffered port:32 p_sim_out)

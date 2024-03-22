@@ -23,13 +23,13 @@ void board_setup(void)
 {
     p_spdif_rx   :> void;
     //////// BOARD SETUP FOR XU316 MC AUDIO ////////
-    
+
     set_port_drive_high(p_ctrl);
-    
+
     // Drive control port to turn on 3V3.
     // Bits set to low will be high-z, pulled down.
     p_ctrl <: 0x20;
-    
+
     // Wait for power supplies to be up and stable.
     if(!_is_simulation())
     {
@@ -41,7 +41,7 @@ void board_setup(void)
 #define CORE_CLOCK_MHZ 500
 #define CLK_DIVIDE 1
 // Define how many 32 bit samples to collect for analysis
-#define SAMPLES 20000 //61140 
+#define SAMPLES 20000 //61140
 #define RECORD 60000
 
 #define PORT_PAD_CTL_4mA_SCHMITT   0x00920006
@@ -79,23 +79,23 @@ void spdif_rx_analyse(void)
     // asm volatile ("setc res[%0], %1" :: "r" (p_spdif_rx), "r" (0x000B)); // Turn on PULLDOWN
     // Uncomment the following line to turn on the input pad pullup.
     // asm volatile ("setc res[%0], %1" :: "r" (p_spdif_rx), "r" (0x0013)); // Turn on PULLUP
-  
+
     // Delay a long time to make sure everything is settled
     if(!_is_simulation())
     {
         delay_milliseconds(1000);
     }
-    
+
     // printf("S/PDIF signal quality analyser.\n");
-    
+
     float core_clock_ns = 1000/CORE_CLOCK_MHZ;
-    
+
     unsigned sample_rate_MHz = CORE_CLOCK_MHZ/(CLK_DIVIDE*2);
     float sample_time_ns = (core_clock_ns * 2 * CLK_DIVIDE);
-    printf("%fns\n", sample_time_ns); 
-    
+    printf("%fns\n", sample_time_ns);
+
     printf("%dMHz\n", sample_rate_MHz);
-    
+
     unsigned samples[RECORD];
     // #pragma unsafe arrays
     // Sample the input port and load into array in memory
@@ -127,7 +127,7 @@ void spdif_rx_analyse(void)
     // Look for pulses
     // Find and log all pulse lengths in an array and list if they are positive pulses (1s) or negative (0s).
     // Initially just add all pulse length results into an array.
-    
+
     unsigned cur_value = samples[0] & 1; // record the value of the first pulse (LSB of samples[0])
     unsigned cur_sample;
     unsigned last_tran = 0;
@@ -136,7 +136,7 @@ void spdif_rx_analyse(void)
     unsigned t = 0;
     unsigned cur_bit;
     unsigned rising_count = 0;
-    
+
     for(int i=0; i<SAMPLES; i++)
     {
         // printf("%u/%u\b\b\b\b\b\b\b\b\b\b\b\b\b",i,SAMPLES);
@@ -156,7 +156,7 @@ void spdif_rx_analyse(void)
                 }
                 if (cur_value == 1) // rising edge
                 {
-                    rising_count++; 
+                    rising_count++;
                 }
                 if (rising_count > 1) // Don't start until we've seen two rising edges, so first pulse length recorded is always negative and ignores first pulse length which would be bogus.
                 {
@@ -170,30 +170,30 @@ void spdif_rx_analyse(void)
             t++;
         }
     }
-    
+
 /*     for(int i=0; i<pulse_count; i++)
     {
         //you may need to reduce the size of SAMPLES to enable printing
 
-        printf("Pulse length[%d] = %d\n", i, pulse_lengths[i]); 
+        printf("Pulse length[%d] = %d\n", i, pulse_lengths[i]);
     } */
-        
+
     // Basic analysis of input.
-    
+
     // Check signal is toggling
     if (pulse_count == 0)
     {
         printf("No transitions found. Signal is static. QUIT.\n"); /* you may need to reduce the size of SAMPLES to enable printing*/
         exit(1);
     }
-    
+
     // Check there are a minimum total number of transitions
     if (pulse_count < (SAMPLES>>4))
     {
         printf("Too few transitions. QUIT.\n"); /* you may need to reduce the size of SAMPLES to enable printing*/
         exit(1);
     }
-    
+
     // Build a histogram of pulse lengths
     unsigned pulse_histogram[128] = {0}; // count of how many pulses occurred for each pulse length. Pulse length is index into this array.
 
@@ -226,14 +226,14 @@ void spdif_rx_analyse(void)
         }
         hist_count = 0;
     }
-    
+
     //printf("histogram: max_count = %d, max_pulse = %d, min pulse = %d\n", max_count, max_pulse, min_pulse);
 
     // Need to scale the histogram here
-    // Say we want max characters printed to be 100 
+    // Say we want max characters printed to be 100
     // We will scale the graph by (max_count/100)
     unsigned scale = max_count/100;
-    
+
     // Print the histogram
     // printf("Pulse Length Histogram\n"); /* you may need to reduce the size of SAMPLES to enable printing*/
     // printf("Pulse Length(ns), Count : Histogram graph\n"); /* you may need to reduce the size of SAMPLES to enable printing*/
@@ -246,7 +246,7 @@ void spdif_rx_analyse(void)
         }
         printf("\n");
     }
-    
+
     // Now look in the histogram for the gaps between pulse length groups (short, mid, long) where there were no pulses of intermediate length
     // Find all the groups of bins with consecutive 0s in. (ideally would be two groups).
     unsigned zeros = 0;
@@ -254,7 +254,7 @@ void spdif_rx_analyse(void)
     unsigned zeros_len[10] = {0};
     unsigned zeros_groups = 0;
     #define ZERO_THRESH 2 // Below what count do we consider as just noise (only for debug in noisy cables/systems)
-    
+
     for(int j=min_pulse; j<max_pulse; j++)
     {
         if (zeros == 0)
@@ -275,17 +275,17 @@ void spdif_rx_analyse(void)
             }
         }
     }
-    
+
     printf("No. of groups of zero bins %d:\n", zeros_groups);
     for(int i=0; i<zeros_groups; i++)
     {
         printf("%d: s: %d, e: %d, l: %d\n", i, zeros_start[i], (zeros_start[i] + zeros_len[i] - 1), zeros_len[i]);
     }
-    
+
     // Find the index of the longest two groups
     unsigned zeros_len_max[2] = {0};
     unsigned zeros_len_max_index[2] = {0};
-    
+
     if (zeros_groups < 2)
     {
         printf("Found less than two groups of zeros, cannot discern between pulses. QUIT.\n"); /* you may need to reduce the size of SAMPLES to enable printing*/
@@ -312,10 +312,10 @@ void spdif_rx_analyse(void)
             }
         }
     }
-    
+
     printf("2 Longest zero groups:\n");
     unsigned thresh[2] = {0}; // pulse width thresholds [0] = short-mid, [1] = mid-long
-    
+
     for(int i=0;i<2;i++)
     {
         unsigned index = zeros_len_max_index[i];
@@ -329,7 +329,7 @@ void spdif_rx_analyse(void)
         thresh[i] = start + (length/2);
         printf("%d, s %d, e %d, l %d, t %d\n", i, start, (start+length-1), length, thresh[i]);
     }
-    
+
     // We want the thresholds in pulse length order, if they are not, swap them.
     if (thresh[1] < thresh[0])
     {
@@ -337,12 +337,12 @@ void spdif_rx_analyse(void)
         thresh[0] = thresh[1];
         thresh[1] = tmp;
     }
-    
+
     // printf("Pulse length thresholds (samples): short-mid = %d, mid-long = %d\n", thresh[0], thresh[1]);
     printf("s-m %d, m-l %d\n", thresh[0], thresh[1]);
-    
+
     // Indexing: short = 0, medium = 1, long = 2
-    
+
     // Find the sample rate
     // Look for preambles. All start with a long pulse, then disregard the next say eight pulses (some may be long)
     // So look for a long pulse, wait for eight pulses to make sure we're in the middle of a word. Then look for long pulse, make this time t0. ignore next eight pulses and look for long again.
@@ -351,9 +351,9 @@ void spdif_rx_analyse(void)
     int first_long = 0;
     int pre_count = 0;
     int i_start, i_end;
-    
+
     //printf("pulse_count = %d\n", pulse_count);
-    
+
     for(int i=0; i<pulse_count; i++)
     {
         if (pulse_lengths[i] > thresh[1]) // Long
@@ -380,7 +380,7 @@ void spdif_rx_analyse(void)
             }
         }
     }
-    
+
     // Sum up all the pulse times to get the total time
     unsigned t_pre256 = 0;
     printf("i_start:%d@%p < i_end:%d@%p: %s\n", i_start, (void*) &i_start, i_end, (void*) &i_end, (i_start < i_end ? "TRUE" : "FALSE"));
@@ -389,18 +389,18 @@ void spdif_rx_analyse(void)
         t_pre256 = t_pre256 + pulse_lengths[i];
         printf("i = %d   t_pre256 = %d  pulse_len = %c", i, t_pre256, pulse_lengths[i]);
     }
-    
+
     float time_1ui_fl;
     float calc_sample_rate_khz;
-    
+
     printf("t_pre256 = %d\n", t_pre256);
-    
+
     // 256 preambles means 256 subframes so (256*64UI per subframe) = 16384UI
     // Total time is t_pre256 * sample time
     // So final is (t_pre256 * sample time)/16384
     time_1ui_fl = (float) (t_pre256*sample_time_ns)/16384;
     calc_sample_rate_khz = 1000000/(time_1ui_fl*128);
-    
+
     printf("i_start = %d@%p, i_end = %d@%p, time_1ui_fl = %fns, calc_sample_rate = %.3fkHz\n", i_start, (void*) &i_start, i_end, (void*) &i_end, time_1ui_fl, calc_sample_rate_khz);
     printf("Measured sample rate = %.3fkHz\n", calc_sample_rate_khz);
 
@@ -409,16 +409,16 @@ void spdif_rx_analyse(void)
 
     unsigned pos_len_count[3] = {0}; // Positive length count
     unsigned neg_len_count[3] = {0}; // Negative length count
-    
+
     unsigned pos_min_len[3] = {1000,1000,1000};
     unsigned neg_min_len[3] = {1000,1000,1000};
-    
+
     unsigned pos_max_len[3] = {0};
     unsigned neg_max_len[3] = {0};
-    
+
     // First pulse length in the array is a negative pulse. Then they obviously alternate every pulse.
     // So all even indexes in the array are negative. All odd indexes are positive.
-    
+
     for(int i=0; i<pulse_count; i++)
     {
         //printf("Pulse length[%d] = %d\n", i, pulse_lengths[i]);
@@ -508,11 +508,11 @@ void spdif_rx_analyse(void)
             }
         }
     }
-    
+
     float pos_min_len_ns[3];
     float pos_max_len_ns[3];
     float pos_len_avg_flt_ns[3];
-    
+
     float neg_min_len_ns[3];
     float neg_max_len_ns[3];
     float neg_len_avg_flt_ns[3];
@@ -526,38 +526,38 @@ void spdif_rx_analyse(void)
         pos_len_avg_flt_ns[i] = ((float)pos_len_tot[i]/(float)pos_len_count[i]) * sample_time_ns;
         neg_len_avg_flt_ns[i] = ((float)neg_len_tot[i]/(float)neg_len_count[i]) * sample_time_ns;
     }
-    
+
     printf("Analysing duty-cycle distortion ... \n");
     printf("Found %4d short positive pulses.  pulse_length(ns): min %6.2f, max %6.2f, avg %6.2f, pk-pk jitter %5.2f\n", pos_len_count[0], pos_min_len_ns[0], pos_max_len_ns[0], pos_len_avg_flt_ns[0], (pos_max_len_ns[0]-pos_min_len_ns[0]) );
     printf("Found %4d short negative pulses.  pulse_length(ns): min %6.2f, max %6.2f, avg %6.2f, pk-pk jitter %5.2f\n", neg_len_count[0], neg_min_len_ns[0], neg_max_len_ns[0], neg_len_avg_flt_ns[0], (neg_max_len_ns[0]-neg_min_len_ns[0]) );
     printf("Found %4d medium positive pulses. pulse_length(ns): min %6.2f, max %6.2f, avg %6.2f, pk-pk jitter %5.2f\n", pos_len_count[1], pos_min_len_ns[1], pos_max_len_ns[1], pos_len_avg_flt_ns[1], (pos_max_len_ns[1]-pos_min_len_ns[1]) );
-    printf("Found %4d medium negative pulses. pulse_length(ns): min %6.2f, max %6.2f, avg %6.2f, pk-pk jitter %5.2f\n", neg_len_count[1], neg_min_len_ns[1], neg_max_len_ns[1], neg_len_avg_flt_ns[1], (neg_max_len_ns[1]-neg_min_len_ns[1]) );  
+    printf("Found %4d medium negative pulses. pulse_length(ns): min %6.2f, max %6.2f, avg %6.2f, pk-pk jitter %5.2f\n", neg_len_count[1], neg_min_len_ns[1], neg_max_len_ns[1], neg_len_avg_flt_ns[1], (neg_max_len_ns[1]-neg_min_len_ns[1]) );
     printf("Found %4d long positive pulses.   pulse_length(ns): min %6.2f, max %6.2f, avg %6.2f, pk-pk jitter %5.2f\n", pos_len_count[2], pos_min_len_ns[2], pos_max_len_ns[2], pos_len_avg_flt_ns[2], (pos_max_len_ns[2]-pos_min_len_ns[2]) );
     printf("Found %4d long negative pulses.   pulse_length(ns): min %6.2f, max %6.2f, avg %6.2f, pk-pk jitter %5.2f\n", neg_len_count[2], neg_min_len_ns[2], neg_max_len_ns[2], neg_len_avg_flt_ns[2], (neg_max_len_ns[2]-neg_min_len_ns[2]) );
-    
+
     float pos_duty_cycle[3];
-    
+
     for(int i=0; i<3; i++)
     {
         pos_duty_cycle[i] = (pos_len_avg_flt_ns[i]/(pos_len_avg_flt_ns[i] + neg_len_avg_flt_ns[i]))*100;
     }
-    
+
     printf("Short pulse duty cycle  = %.3f%%, pulse_width difference = %.2fns\n", pos_duty_cycle[0], (pos_len_avg_flt_ns[0] - neg_len_avg_flt_ns[0]) );
     printf("Medium pulse duty cycle = %.3f%%, pulse_width difference = %.2fns\n", pos_duty_cycle[1], (pos_len_avg_flt_ns[1] - neg_len_avg_flt_ns[1]) );
     printf("Long pulse duty cycle   = %.3f%%, pulse_width difference = %.2fns\n", pos_duty_cycle[2], (pos_len_avg_flt_ns[2] - neg_len_avg_flt_ns[2]) );
-    
+
     // So actually duty cycle distortion isn't the whole problem.
     // Intersymbol interference is also a problem.
     // This results in the first short pulse after a medium being shorter than it should be.
     // You can see this best in the preamble where you can see the delay for an edge after one, two or three UI.
     // So you will typically get a medium then a short short and a long short.
     // So to measure this we'll have to track if each short is the first or second of two shorts (two shorts almost always appear together). exception is in preamble.
-    
+
     unsigned short_tot[3] = {0}; // short after pulse length 1, 2 and 3UI totals
     unsigned short_count[3] = {0}; // short count after pulse length 1, 2 and 3UI
-    unsigned short_min_len[3] = {1000,1000,1000};  
+    unsigned short_min_len[3] = {1000,1000,1000};
     unsigned short_max_len[3] = {0};
-    
+
     for(int i=i_start; i<i_end; i++)
     {
         unsigned pulse_len = pulse_lengths[i];
@@ -605,23 +605,23 @@ void spdif_rx_analyse(void)
             }
         }
     }
-    
+
     float short_min_len_ns[3];
     float short_max_len_ns[3];
     float short_len_avg_flt_ns[3];
-    
+
     for(int i=0; i<3; i++)
-    { 
+    {
         short_min_len_ns[i] = short_min_len[i] * sample_time_ns;
         short_max_len_ns[i] = short_max_len[i] * sample_time_ns;
         short_len_avg_flt_ns[i] = ((float)short_tot[i]/(float)short_count[i]) * sample_time_ns;
     }
-    
+
     printf("Analysing inter symbol interference ...\n");
     printf("Found %4d short pulses after a short pulse.  pulse_length(ns): min %.2f, max %.2f, avg %.2f, jitter %.2f\n", short_count[0], short_min_len_ns[0], short_max_len_ns[0], short_len_avg_flt_ns[0], (short_max_len_ns[0]-short_min_len_ns[0]) );
-    printf("Found %4d short pulses after a medium pulse. pulse_length(ns): min %.2f, max %.2f, avg %.2f, jitter %.2f\n", short_count[1], short_min_len_ns[1], short_max_len_ns[1], short_len_avg_flt_ns[1], (short_max_len_ns[1]-short_min_len_ns[1]) );    
+    printf("Found %4d short pulses after a medium pulse. pulse_length(ns): min %.2f, max %.2f, avg %.2f, jitter %.2f\n", short_count[1], short_min_len_ns[1], short_max_len_ns[1], short_len_avg_flt_ns[1], (short_max_len_ns[1]-short_min_len_ns[1]) );
     printf("Found %4d short pulses after a long pulse.   pulse_length(ns): min %.2f, max %.2f, avg %.2f, jitter %.2f\n", short_count[2], short_min_len_ns[2], short_max_len_ns[2], short_len_avg_flt_ns[2], (short_max_len_ns[2]-short_min_len_ns[2]) );
-    
+
     // Also, we can write something to calculate the jitter in zero crossings.
     // Say take the 100 full frames block with the start and end time. Then we know each UI should be at (end-start)/number of UI. number of UI is 100*2*64 = 12800.
     // We have a float to record the average UI for this block.
@@ -634,7 +634,7 @@ void spdif_rx_analyse(void)
     float edge_tie[4*SAMPLES] = {0};
     float min_tie = 0;
     float max_tie = 0;
-    
+
     unsigned sample_time_ns_int = 4;
 
     printf("Analysing time interval error of zero crossings.\n");
@@ -643,7 +643,7 @@ void spdif_rx_analyse(void)
         unsigned pulse_len = pulse_lengths[i];
         //edge_time = edge_time + (float) (pulse_len * sample_time_ns);
         edge_time += pulse_len;
-        
+
         if (pulse_len < thresh[0]) // short 1UI
         {
             pulse_len_quant = 1;
@@ -675,7 +675,7 @@ void spdif_rx_analyse(void)
         //printf("i %3d, pulse_len %3d, edge_time %3d, edge_time_ns %5d, len_quant %d, ideal_edge_time %f, edge_tie %5.2f, min %5.2f, max %5.2f\n", i, pulse_len, edge_time, edge_time_ns, pulse_len_quant, ideal_edge_time, edge_tie[i], min_tie, max_tie);
     }
     printf("Zero crossing TIE (ns): min %.2f, max %.2f, pk-pk %.2f\n", min_tie, max_tie, (max_tie - min_tie));
-    
+
     //while(1);
     if(!_is_simulation()){
         for(unsigned i = 0; i < RECORD; i++)
