@@ -1,3 +1,0 @@
-#!/bin/sh
-javac Arrange.java
-java Arrange > ../../lib_spdif/src/SpdifReceive.S
