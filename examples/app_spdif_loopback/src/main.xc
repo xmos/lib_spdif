@@ -1,4 +1,4 @@
-// Copyright 2014-2023 XMOS LIMITED.
+// Copyright 2014-2024 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 #include <xs1.h>
@@ -8,6 +8,10 @@
 #include <spdif.h>
 #include <stdio.h>
 #include <print.h>
+
+extern "C" {
+    #include <sw_pll.h>
+}
 
 // Change these defines to control optical/coax and set the sample frequency.
 #ifndef OPTICAL
@@ -31,16 +35,6 @@ on tile[1]:                   clock   clk_spdif_tx    = XS1_CLKBLK_1;
 
 #define MCLK_FREQUENCY_48     (24576000)
 #define MCLK_FREQUENCY_441    (22579200)
-
-// Found solution: IN 24.000MHz, OUT 24.576000MHz, VCO 2457.60MHz, RD 1, FD 102.400 (m = 2, n = 5), OD 5, FOD 5, ERR 0.0ppm
-#define APP_PLL_CTL_24M       (0x0A006500)
-#define APP_PLL_DIV_24M       (0x80000004)
-#define APP_PLL_FRAC_24M      (0x80000104)
-
-// Found solution: IN 24.000MHz, OUT 22.579186MHz, VCO 3522.35MHz, RD  1, FD  146.765 (m =  13, n =  17), OD  3, FOD   13, ERR -0.641ppm
-#define APP_PLL_CTL_22M       (0x09009100)
-#define APP_PLL_DIV_22M       (0x8000000C)
-#define APP_PLL_FRAC_22M      (0x80000C10)
 
 // One cycle of full scale 24 bit sine wave in 96 samples.
 // This will produce 500Hz signal at Fs = 48kHz, 1kHz at 96kHz and 2kHz at 192kHz.
@@ -116,39 +110,6 @@ void generate_samples(chanend c, chanend c_sync)
                 break;
         }
     }
-}
-
-// Set secondary (App) PLL control register
-void set_app_pll_init (tileref tile, int app_pll_ctl)
-{
-    // Disable the PLL
-    write_node_config_reg(tile, XS1_SSWITCH_SS_APP_PLL_CTL_NUM, (app_pll_ctl & 0xF7FFFFFF));
-    // Enable the PLL to invoke a reset on the appPLL.
-    write_node_config_reg(tile, XS1_SSWITCH_SS_APP_PLL_CTL_NUM, app_pll_ctl);
-    // Must write the CTL register twice so that the F and R divider values are captured using a running clock.
-    write_node_config_reg(tile, XS1_SSWITCH_SS_APP_PLL_CTL_NUM, app_pll_ctl);
-    // Now disable and re-enable the PLL so we get the full 5us reset time with the correct F and R values.
-    write_node_config_reg(tile, XS1_SSWITCH_SS_APP_PLL_CTL_NUM, (app_pll_ctl & 0xF7FFFFFF));
-    write_node_config_reg(tile, XS1_SSWITCH_SS_APP_PLL_CTL_NUM, app_pll_ctl);
-    // Wait for PLL to lock.
-    delay_microseconds(500);
-}
-
-void app_pll_setup(void)
-{
-    if ((SAMPLE_FREQUENCY_HZ % 44100) == 0)
-    {
-        set_app_pll_init(tile[0], APP_PLL_CTL_22M);
-        write_node_config_reg(tile[0], XS1_SSWITCH_SS_APP_PLL_FRAC_N_DIVIDER_NUM, APP_PLL_FRAC_22M);
-        write_node_config_reg(tile[0], XS1_SSWITCH_SS_APP_CLK_DIVIDER_NUM, APP_PLL_DIV_22M);
-    }
-    else
-    {
-        set_app_pll_init(tile[0], APP_PLL_CTL_24M);
-        write_node_config_reg(tile[0], XS1_SSWITCH_SS_APP_PLL_FRAC_N_DIVIDER_NUM, APP_PLL_FRAC_24M);
-        write_node_config_reg(tile[0], XS1_SSWITCH_SS_APP_CLK_DIVIDER_NUM, APP_PLL_DIV_24M);
-    }
-    delay_milliseconds(10);
 }
 
 #pragma unsafe arrays
@@ -293,6 +254,16 @@ void board_setup(void)
 
     // Wait for power supplies to be up and stable.
     delay_milliseconds(10);
+
+    if ((SAMPLE_FREQUENCY_HZ % 44100) == 0)
+    {
+        sw_pll_fixed_clock(MCLK_FREQUENCY_441);
+    }
+    else
+    {
+        sw_pll_fixed_clock(MCLK_FREQUENCY_48);
+    }
+    delay_milliseconds(10);
 }
 
 int main(void)
@@ -306,7 +277,6 @@ int main(void)
         on tile[0]:
         {
             board_setup();
-            app_pll_setup();
             spdif_rx(c_spdif_rx, p_spdif_rx, clk_spdif_rx, SAMPLE_FREQUENCY_HZ);
         }
 

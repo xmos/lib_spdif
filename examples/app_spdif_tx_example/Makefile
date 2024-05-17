@@ -22,7 +22,7 @@ XCC_FLAGS = -O2 -g
 
 # The USED_MODULES variable lists other module used by the application.
 
-USED_MODULES = lib_spdif lib_xassert
+USED_MODULES = lib_spdif lib_sw_pll lib_xassert
 
 
 #=============================================================================
