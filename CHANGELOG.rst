@@ -1,6 +1,11 @@
 lib_spdif Change Log
 ====================
 
+UNRELEASED
+----------
+
+  * CHANGED:   Use lib_sw_pll for configuring the application PLL in examples
+
 6.1.0
 -----
 
