@@ -79,7 +79,7 @@ class Spdif_rx(Clock):
             if in_buff[:8] == PREAMBLE_Y:
                 sample_counter += 1
                 if sample_counter >= self._no_of_samples:
-                    os._exit(os.EX_OK)
+                    self.terminate_flag = True
 
 
 #####
@@ -223,7 +223,7 @@ class Port_monitor(SimThread):
 
         if result:
             print("PASS")
-        os._exit(os.EX_OK)
+        self.terminate_flag = True
 
 
 #####
