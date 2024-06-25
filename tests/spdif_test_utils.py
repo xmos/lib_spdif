@@ -79,7 +79,7 @@ class Spdif_rx(Clock):
             if in_buff[:8] == PREAMBLE_Y:
                 sample_counter += 1
                 if sample_counter >= self._no_of_samples:
-                    self.terminate_flag = True
+                    self.terminate()
 
 
 #####
@@ -135,15 +135,8 @@ class Spdif_tx(Clock):
             # TODO: make this delay random
             delay = 35e12
 
-        while True:
-            if self._terminate_thread:
-                self.terminate_flag = True
-
     def trigger_thread(self):
         self._trigger_thread = True
-
-    def terminate_thread(self):
-        self._terminate_thread = True
 
 
 #####
@@ -231,7 +224,7 @@ class Port_monitor(SimThread):
 
         if result:
             print("PASS")
-        self._spdif_tx.trigger_thread()
+        self.terminate()
 
 
 #####
