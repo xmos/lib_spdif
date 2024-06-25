@@ -104,6 +104,7 @@ class Spdif_tx(Clock):
         )
         self._trigger_pin = trigger_pin  # If provided with a pin it will wait for a ready signal from the xe before transmitting
         self._trigger_thread = False  # Other simthreads can call the trigger() method to signal to this thread to change stream
+        self._terminate_thread = False
 
     def run(self):
         # Drives the bit representation of the signal byte-array, repeating forever, until the thread trigger is set
@@ -134,8 +135,15 @@ class Spdif_tx(Clock):
             # TODO: make this delay random
             delay = 35e12
 
+        while True:
+            if self._terminate_thread:
+                self.terminate_flag = True
+
     def trigger_thread(self):
         self._trigger_thread = True
+
+    def terminate_thread(self):
+        self._terminate_thread = True
 
 
 #####
@@ -223,7 +231,7 @@ class Port_monitor(SimThread):
 
         if result:
             print("PASS")
-        self.terminate_flag = True
+        self._spdif_tx.trigger_thread()
 
 
 #####
