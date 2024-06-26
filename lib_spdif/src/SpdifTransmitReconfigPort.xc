@@ -4,7 +4,7 @@
 #include <xs1.h>
 #include "spdif.h"
 
-/* Note, this function is in a seperate fill such that -Wunusual-code can be applied to it */
+/* Note, this function is in a seperate file such that -Wunusual-code can be applied to it */
 
 void spdif_tx_reconfig_port(chanend c, out port p_spdif, const clock mclk)
 {

@@ -5,15 +5,16 @@ UNRELEASED
 ----------
 
   * CHANGED:   Use lib_sw_pll for configuring the application PLL in examples
+  * FIXED:     Supressed warnings regarding taking the address of a resource handle
 
 6.1.0
 -----
 
   * ADDED:     Support for XCommon CMake build system
   * ADDED:     Support for transmit at 32kHz
-  * RESOLVED:  Coding optimisations not properly enabled in receiver
-  * RESOLVED:  Receiver timing issues for sample rates greater than 96kHz
-  * RESOLVED:  Failure to select correct receive sample rate when the sample
+  * FIXED:     Coding optimisations not properly enabled in receiver
+  * FIXED:     Receiver timing issues for sample rates greater than 96kHz
+  * FIXED:     Failure to select correct receive sample rate when the sample
     rate of the incoming stream changes
 
 6.0.0
