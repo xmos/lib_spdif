@@ -79,7 +79,7 @@ class Spdif_rx(Clock):
             if in_buff[:8] == PREAMBLE_Y:
                 sample_counter += 1
                 if sample_counter >= self._no_of_samples:
-                    os._exit(os.EX_OK)
+                    self.terminate()
 
 
 #####
@@ -104,6 +104,7 @@ class Spdif_tx(Clock):
         )
         self._trigger_pin = trigger_pin  # If provided with a pin it will wait for a ready signal from the xe before transmitting
         self._trigger_thread = False  # Other simthreads can call the trigger() method to signal to this thread to change stream
+        self._terminate_thread = False
 
     def run(self):
         # Drives the bit representation of the signal byte-array, repeating forever, until the thread trigger is set
@@ -223,7 +224,7 @@ class Port_monitor(SimThread):
 
         if result:
             print("PASS")
-        os._exit(os.EX_OK)
+        self.terminate()
 
 
 #####
