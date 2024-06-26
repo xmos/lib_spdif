@@ -5,8 +5,14 @@
 ifeq ($(CONFIG), xs2)
 	TARGET = XCORE-200-EXPLORER
 endif
+ifeq ($(CONFIG), xs2_300)
+	TARGET = XCORE-200-EXPLORER-300.xn
+endif
 ifeq ($(CONFIG), xs3)
 	TARGET = XCORE-AI-EXPLORER
+endif
+ifeq ($(CONFIG), xs3_375)
+	TARGET = XCORE-AI-EXPLORER-375.xn
 endif
 
 # The APP_NAME variable determines the name of the final .xe file. It should
@@ -22,8 +28,10 @@ APP_NAME =
 #
 # If the variable XCC_MAP_FLAGS is set it overrides the flags passed to
 # xcc for the final link (mapping) stage.
-XCC_FLAGS_xs2 = $(EXTRA_BUILD_FLAGS) -O0 -g -save-temps
-XCC_FLAGS_xs3 = $(EXTRA_BUILD_FLAGS) -O0 -g -save-temps
+XCC_FLAGS_xs2      = $(EXTRA_BUILD_FLAGS) -O0 -g -save-temps
+XCC_FLAGS_xs2_300 = $(EXTRA_BUILD_FLAGS) -O0 -g -save-temps
+XCC_FLAGS_xs3      = $(EXTRA_BUILD_FLAGS) -O0 -g -save-temps
+XCC_FLAGS_xs3_375 = $(EXTRA_BUILD_FLAGS) -O0 -g -save-temps
 
 # The USED_MODULES variable lists other module used by the application.
 USED_MODULES = lib_spdif
