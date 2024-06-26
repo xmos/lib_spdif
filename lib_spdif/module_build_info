@@ -5,6 +5,9 @@ DEPENDENT_MODULES =
 MODULE_XCC_FLAGS = $(XCC_FLAGS) \
                    -O3
 
+XCC_FLAGS_SpdifTransmitReconfigPort.xc = $(MODULE_XCC_FLAGS) -Wno-unusual-code
+XCC_FLAGS_spdif_rx.xc = $(MODULE_XCC_FLAGS) -Wno-unusual-code
+
 OPTIONAL_HEADERS +=
 
 EXPORT_INCLUDE_DIRS = api \
