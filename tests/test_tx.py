@@ -14,7 +14,7 @@ from spdif_test_utils import (
 
 MAX_CYCLES = 15000000
 SAM_FREQS = [44100, 48000, 88200, 96000, 176400, 192000]
-CONFIGS = ["xs2", "xs3"]
+CONFIGS = ["xs2", "xs2_FREQ", "xs3", "xs3_FREQ"]
 
 
 def _get_duration():
@@ -31,6 +31,10 @@ def _get_mclk_freq(sam_freq):
 
 
 def tx_uncollect(config, sam_freq):
+    reduced_clock_configs = ["xs2_FREQ", "xs3_FREQ"]
+    reduced_freq_set = []
+    if config in reduced_clock_configs and sam_freq not in reduced_freq_set:
+        return True
     return False
 
 
