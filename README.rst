@@ -1,7 +1,7 @@
 S/PDIF Component
 ################
 
-:Version: 6.1.0
+:Version: 6.1.1
 :Vendor: XMOS
 :Scope: General Use
 
