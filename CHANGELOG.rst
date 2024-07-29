@@ -1,8 +1,8 @@
 lib_spdif Change Log
 ====================
 
-UNRELEASED
-----------
+6.1.1
+-----
 
   * CHANGED:   Use lib_sw_pll for configuring the application PLL in examples
   * FIXED:     Supressed warnings regarding taking the address of a resource handle
