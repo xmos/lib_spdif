@@ -73,7 +73,17 @@ pipeline {
         }
       }
     }
-    stage('xCORE builds and doc') {
+    stage('xCORE builds') {
+      steps {
+        dir("${REPO}") {
+          // xcoreAllAppsBuild('examples')
+          // runXdoc("${REPO}/doc")
+          // Archive all the generated .pdf docs
+          // archiveArtifacts artifacts: "${REPO}/**/pdf/*.pdf", fingerprint: true, allowEmptyArchive: true
+        }
+      }
+    }
+    stage('XMOSDOC') {
       steps {
         dir("${REPO}") {
           // xcoreAllAppsBuild('examples')
