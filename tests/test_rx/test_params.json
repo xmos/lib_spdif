@@ -1,0 +1,7 @@
+{
+    "SAM_FREQS" : [44100, 48000, 88200, 96000, 176400, 192000],
+    "CONFIG": [
+        {"ARCH" : "XS2", "CORE_FREQ" : 300, "XN_FILE" : "XCORE-200-EXPLORER-300.xn"},
+        {"ARCH" : "XS3", "CORE_FREQ" : 300, "XN_FILE" : "XCORE-AI-EXPLORER-300.xn"}
+        ]
+}
