@@ -30,6 +30,7 @@ pipeline {
   stages {
     stage('Get Sandbox') {
       steps {
+        sh 'git clone git@github.com:xmos/test_support'
         dir("${REPO}") {
           checkout scm
           installPipfile(false)
