@@ -1,4 +1,5 @@
-@Library('xmos_jenkins_shared_library@v0.29.0') _
+@Library('xmos_jenkins_shared_library@develop') _
+// New lib checks fn - will be merged into mainline soon so will need to update this tag
 
 getApproval()
 
@@ -8,22 +9,43 @@ pipeline {
   }
   environment {
     REPO = 'lib_spdif'
-    VIEW = getViewName(REPO)
+    PYTHON_VERSION = "3.10.5"
+    VENV_DIRNAME = ".venv"
   }
   options {
     skipDefaultCheckout()
     timestamps()
-    buildDiscarder(xmosDiscardBuildSettings())
-  }
+    // on develop discard builds after a certain number else keep forever
+    buildDiscarder(logRotator(
+        numToKeepStr:         env.BRANCH_NAME ==~ /develop/ ? '25' : '',
+        artifactNumToKeepStr: env.BRANCH_NAME ==~ /develop/ ? '25' : ''
+    ))  }
+    parameters {
+        string(
+            name: 'TOOLS_VERSION',
+            defaultValue: '15.3.0',
+            description: 'The XTC tools version'
+        )
+    }
   stages {
-    stage('Get view') {
+    stage('Get Sandbox') {
       steps {
-        xcorePrepareSandbox("${VIEW}", "${REPO}")
+        dir("${REPO}") {
+          checkout scm
+          installPipfile(false)
+          withVenv {
+            withTools(params.TOOLS_VERSION) {
+              dir("examples") {
+                sh 'cmake -B build -G "Unix Makefiles"'
+              }
+            }
+          }
+        }
       }
     }
     stage('Library checks') {
       steps {
-        xcoreLibraryChecks("${REPO}", false)
+        runLibraryChecks("${WORKSPACE}/${REPO}", "v2.0.0")
       }
     }
     // stage('Generate') {
@@ -40,7 +62,11 @@ pipeline {
         dir("${REPO}/tests"){
           viewEnv(){
             withVenv() {
-              sh "pytest -v --junitxml=pytest_result.xml"
+              withTools(params.TOOLS_VERSION) {
+                  sh 'cmake -B build -G "Unix Makefiles"'
+                  sh 'xmake -j 16 -C build'
+                  sh "pytest -v --junitxml=pytest_result.xml"
+              }
             }
           }
         }
@@ -49,10 +75,10 @@ pipeline {
     stage('xCORE builds and doc') {
       steps {
         dir("${REPO}") {
-          xcoreAllAppsBuild('examples')
-          runXdoc("${REPO}/doc")
+          // xcoreAllAppsBuild('examples')
+          // runXdoc("${REPO}/doc")
           // Archive all the generated .pdf docs
-          archiveArtifacts artifacts: "${REPO}/**/pdf/*.pdf", fingerprint: true, allowEmptyArchive: true
+          // archiveArtifacts artifacts: "${REPO}/**/pdf/*.pdf", fingerprint: true, allowEmptyArchive: true
         }
       }
     }
