@@ -7,8 +7,6 @@ set(XMOS_SANDBOX_DIR        ${CMAKE_CURRENT_LIST_DIR}/../../..)
 
 set(APP_PCA_ENABLE          ON)
 
-# set(CONFIGS                 XS2_300
-#                             XS3_300)
 # Get JSON lists
 file(READ ${CMAKE_CURRENT_LIST_DIR}/test_params.json JSON_CONTENT)
 

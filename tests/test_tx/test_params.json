@@ -1,0 +1,12 @@
+{
+    "SAM_FREQS" : [44100, 48000, 88200, 96000, 176400, 192000],
+    "CONFIG": [
+        {"ARCH" : "XS2", "CORE_FREQ" : 300, "XN_FILE" : "XCORE-200-EXPLORER-300.xn"},
+        {"ARCH" : "XS2", "CORE_FREQ" : 500, "XN_FILE" : "XCORE-200-EXPLORER"},
+        {"ARCH" : "XS3", "CORE_FREQ" : 375, "XN_FILE" : "XCORE-AI-EXPLORER-375.xn"},
+        {"ARCH" : "XS3", "CORE_FREQ" : 600, "XN_FILE" : "XCORE-AI-EXPLORER"}
+        ],
+    "RAMP0" : -7,
+    "RAMP1" : 5,
+    "NO_OF_SAMPLES" : 193
+}
