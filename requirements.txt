@@ -20,6 +20,7 @@
 
 flake8==3.8.3
 pytest==7.1.2
+pytest-xdist==3.6.1
 # Pin importlib-metadata to <5 due to https://github.com/python/importlib_metadata/issues/409.
 importlib-metadata==4.13.0
 
