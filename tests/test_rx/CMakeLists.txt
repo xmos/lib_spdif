@@ -23,16 +23,14 @@ math(EXPR NUM_SAM_FREQS "${NUM_SAM_FREQS} - 1")
 math(EXPR NUM_CONFIGS "${NUM_CONFIGS} - 1")
 
 foreach(i RANGE 0 ${NUM_CONFIGS})
-    message(STATUS IDX:${i})
     string(JSON CONFIG GET ${CONFIG_LIST} ${i})
-    message(STATUS CONFIG:${CONFIG})
     string(JSON ARCH GET ${CONFIG} ARCH)
     string(JSON CORE_FREQ GET ${CONFIG} CORE_FREQ)
     string(JSON XN_FILE GET ${CONFIG} XN_FILE)
 
     foreach(j RANGE 0 ${NUM_SAM_FREQS})
         string(JSON SAM_FREQ GET ${SAM_FREQS_LIST} ${j})
-        set(CONFIG "${ARCH}_${CORE_FREQ}_${SAM_FREQ}")
+        set(CONFIG "rx_${ARCH}_${CORE_FREQ}_${SAM_FREQ}")
 
         message(STATUS "CONFIG ${CONFIG} - XN_FILE ${XN_FILE} ARCH ${ARCH} CORE_FREQ ${CORE_FREQ}")
 

@@ -31,9 +31,7 @@ string(JSON NO_OF_SAMPLES GET ${JSON_CONTENT} NO_OF_SAMPLES)
 
 
 foreach(i RANGE 0 ${NUM_CONFIGS})
-    message(STATUS IDX:${i})
     string(JSON CONFIG GET ${CONFIG_LIST} ${i})
-    message(STATUS CONFIG:${CONFIG})
     string(JSON ARCH GET ${CONFIG} ARCH)
     string(JSON CORE_FREQ GET ${CONFIG} CORE_FREQ)
     string(JSON XN_FILE GET ${CONFIG} XN_FILE)
@@ -48,7 +46,7 @@ foreach(i RANGE 0 ${NUM_CONFIGS})
             set(MCLK_FREQ 22579200)
         endif()
 
-        set(CONFIG "${ARCH}_${CORE_FREQ}_${SAM_FREQ}")
+        set(CONFIG "tx_${ARCH}_${CORE_FREQ}_${SAM_FREQ}")
 
         message(STATUS "XN_FILE: ${XN_FILE} ARCH: ${ARCH} CORE_FREQ: ${CORE_FREQ} SAM_FREQ: ${SAM_FREQ} MCLK_FREQ: ${MCLK_FREQ}")
 

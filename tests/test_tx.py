@@ -49,7 +49,7 @@ def tx_uncollect(config, sam_freq, ramps, duration):
 def test_tx(capfd, config, sam_freq, duration, ramps):
     
 
-    build_config = f"{config.upper()}_{sam_freq}"
+    build_config = f"tx_{config.upper()}_{sam_freq}"
     xe = str(Path(__file__).parent / f"test_tx/bin/{build_config}/test_rx_{build_config}_{build_config}.xe")
     assert Path(xe).exists(), f"Cannot find {xe}"
 

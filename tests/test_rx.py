@@ -110,7 +110,7 @@ def test_rx(capfd, config, sam_freq, sample_freq_estimate):
     # time taken in the simulator to correct frequency currently too long for tests. Re-enable sample rate mismatch once resolved
     # sample_freq_estimate = sam_freq
 
-    build_config = f"{config.upper()}_{300}_{sam_freq}"
+    build_config = f"rx_{config.upper()}_{300}_{sam_freq}"
     xe = str(Path(__file__).parent / f"test_rx/bin/{build_config}/test_rx_{build_config}_{build_config}.xe")
     assert Path(xe).exists(), f"Cannot find {xe}"
 
