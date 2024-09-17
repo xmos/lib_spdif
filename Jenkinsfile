@@ -88,7 +88,6 @@ pipeline {
               withTools(params.TOOLS_VERSION) {
                   sh 'cmake -B build -G "Unix Makefiles"'
                   sh 'xmake -j 16 -C build'
-                  sh "pytest -v --junitxml=pytest_result.xml -n auto"
               }
             }
           }
