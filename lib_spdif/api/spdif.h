@@ -5,6 +5,11 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <xs1.h>
+#include <xccomapt.h>
+#ifdef __DOXYGEN__
+#define in_port_t in port
+#define out_port_t out port
+#endif
 
 /** This constant provides a mask for the bits that should be used when
  * inspecting the preamble of a sample
@@ -43,16 +48,16 @@
  *
  * The receiver will modifiy the divider of the clock-block to lock to the incoming sample rate.
  *
- * \param p                      S/PDIF input port.
- *
  * \param c                      Channel to connect to the application.
+ *
+ * \param p                      S/PDIF input port.
  *
  * \param clk                    A clock block used internally to clock data.
  *
  * \param sample_freq_estimate   The initial expected sample rate (in Hz).
  *
  **/
-void spdif_rx(streaming chanend c, in port p, clock clk, unsigned sample_freq_estimate);
+void spdif_rx(streaming_chanend_t c, in_port_t p, clock clk, unsigned sample_freq_estimate);
 
 /** Receive a sample from the S/PDIF component.
  *
@@ -79,7 +84,7 @@ void spdif_rx(streaming chanend c, in port p, clock clk, unsigned sample_freq_es
  *                  (i.e. 0 for left channel and 1 for right channel).
  */
 #pragma select handler
-void spdif_rx_sample(streaming chanend c, int32_t &sample, size_t &index);
+void spdif_rx_sample(streaming_chanend_t c, REFERENCE_PARAM(int32_t, sample), REFERENCE_PARAM(size_t, index));
 
 /** Shutdown the S/PDIF receiver component.
  *
@@ -88,7 +93,7 @@ void spdif_rx_sample(streaming chanend c, int32_t &sample, size_t &index);
  *
  *   \param c       chanend connected to the S/PDIF receiver component
  */
-void spdif_rx_shutdown(streaming chanend c);
+void spdif_rx_shutdown(streaming_chanend_t c);
 
 /** Checks the parity of a received S/PDIF sample
  *
@@ -122,7 +127,7 @@ static inline int spdif_rx_check_parity(unsigned sample)
  * \param delay   delay to uses to sync the SPDIF signal at the external
  *                flip-flop
  */
-void spdif_tx_port_config(out buffered port:32 p, clock clk, in port p_mclk, unsigned delay);
+void spdif_tx_port_config(out_buffered_port_32_t p, clock clk, in_port_t p_mclk, unsigned delay);
 
 /** S/PDIF transmit function.
  *
@@ -138,7 +143,7 @@ void spdif_tx_port_config(out buffered port:32 p, clock clk, in port p_mclk, uns
  * \param p_spdif  The output port to transmit to
  * \param c        chanend to connect to the application
  */
-void spdif_tx(buffered out port:32 p_spdif, chanend c);
+void spdif_tx(out_buffered_port_32_t p_spdif, chanend c);
 
 /** Reconfigure the S/PDIF tx component to a new sample rate.
  *

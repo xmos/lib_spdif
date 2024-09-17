@@ -6,3 +6,5 @@ CHANGELOG.rst
 LICENSE.rst
 README.rst
 README.md
+tests/rx_capture/README.rst
+tests/test_rx/README.rst

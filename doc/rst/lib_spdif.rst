@@ -165,11 +165,11 @@ and connects to it:
    :end-at: } // end
 
 The application can communicate with the components via API functions
-that take the channel end as arguments e.g.::
+that take the channel end as arguments e.g.:
 
 .. literalinclude:: ../../examples/app_spdif_rx_example/src/main.xc
    :start-at: void handle_samples(streaming chanend c)
-   :end-before: } void board_setup(void)
+   :end-before: void board_setup(void)
 
 Note that a program can react to incoming samples using a
 ``select`` statement. More information on using ``par`` and ``select``
@@ -242,6 +242,7 @@ S/PDIF Receiver API
 |newpage|
 
 Creating an S/PDIF Transmitter Instance
+.......................................
 
 
 .. doxygenfunction:: spdif_tx_port_config
