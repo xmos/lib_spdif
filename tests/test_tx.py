@@ -30,7 +30,7 @@ def _get_mclk_freq(sam_freq):
         assert False
 
 
-def tx_uncollect(config, sam_freq):
+def tx_uncollect(config, sam_freq, ramps, duration):
     reduced_clock_configs = ["xs2_300", "xs3_375"]
     reduced_freq_set = SAM_FREQS
     if config in reduced_clock_configs and sam_freq not in reduced_freq_set:
@@ -47,7 +47,12 @@ def tx_uncollect(config, sam_freq):
 @pytest.mark.parametrize("duration", [params["NO_OF_SAMPLES"]])
 @pytest.mark.parametrize("ramps", [[params["RAMP0"], params["RAMP1"]],])
 def test_tx(capfd, config, sam_freq, duration, ramps):
-    xe = str(Path(__file__).parent / f"test_tx/bin/{config}/test_tx_{config}.xe")
+    
+
+    build_config = f"{config.upper()}_{sam_freq}"
+    xe = str(Path(__file__).parent / f"test_tx/bin/{build_config}/test_rx_{build_config}_{build_config}.xe")
+    assert Path(xe).exists(), f"Cannot find {xe}"
+
     p_clock = "tile[1]:XS1_PORT_1B"
     p_spdif_out = "tile[1]:XS1_PORT_1A"
     no_of_samples = duration
