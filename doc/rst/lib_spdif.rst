@@ -129,7 +129,7 @@ the programs ``par`` statement.
 
 
 In this function the ``configure_clock_src()`` is used configure a clock to run off an
-incoming port - see the :ref:`XMOS Programming Guide<programming_guide>` for more information.
+incoming port - see the `XMOS Programming Guide <https://www.xmos.com/file/xmos-programming-guide>`_ for more information.
 
 The last parameter is used with the ``set_clock_fall_delay()`` function to configure an
 internal delay from the incoming clock signal to the internal clock's falling edge.
@@ -173,7 +173,7 @@ that take the channel end as arguments e.g.:
 
 Note that a program can react to incoming samples using a
 ``select`` statement. More information on using ``par`` and ``select``
-statements can be found in the :ref:`XMOS Programming Guide<programming_guide>`.
+statements can be found in the `XMOS Programming Guide <https://www.xmos.com/file/xmos-programming-guide>`_.
 
 Each 32-bit word received from the receive component via the channel has the following format:
 

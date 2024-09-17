@@ -1,4 +1,4 @@
-// Copyright 2014-2023 XMOS LIMITED.
+// Copyright 2014-2024 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 #ifndef _SPDIF_H_
 #define _SPDIF_H_
