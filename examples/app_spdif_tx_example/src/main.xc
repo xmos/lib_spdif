@@ -99,4 +99,4 @@ int main(void) {
         on tile[1]: generate_samples(c_spdif);
     }
     return 0;
-}
+} // end
