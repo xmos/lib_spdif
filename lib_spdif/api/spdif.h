@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <xs1.h>
-#include <xccomapt.h>
+#include <xccompat.h>
 #ifdef __DOXYGEN__
 #define in_port_t in port
 #define out_port_t out port
