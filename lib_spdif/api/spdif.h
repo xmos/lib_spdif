@@ -6,7 +6,8 @@
 #include <stddef.h>
 #include <xs1.h>
 #include <xccompat.h>
-#ifdef __DOXYGEN__
+#if defined(__DOXYGEN__) || defined(__XC__) 
+/* These are needed to allow doxy to render properly */
 #define in_port_t in port
 #define out_port_t out port
 #endif
@@ -178,5 +179,6 @@ void spdif_tx_output(chanend c_spdif_tx, unsigned lsample, unsigned rsample);
  *   \param c       chanend connected to the S/PDIF transmitter component
  */
 void spdif_tx_shutdown(chanend c);
+
 
 #endif /* _SPDIF_H_ */
