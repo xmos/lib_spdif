@@ -107,9 +107,6 @@ pipeline {
     always {
       junit "${REPO}/tests/pytest_result.xml"
     }
-    success {
-      updateViewfiles()
-    }
     cleanup {
       xcoreCleanSandbox()
     }
