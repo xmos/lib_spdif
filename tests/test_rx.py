@@ -160,7 +160,7 @@ def test_rx(capfd, config, sam_freq, sample_freq_estimate):
 @pytest.mark.parametrize("config", CONFIGS)
 def test_rx_stream(config, stream, capfd):
 
-    build_config = f"{config.upper()}_{300}_{stream.sam_freq}"
+    build_config = f"rx_{config.upper()}_{300}_{stream.sam_freq}"
     xe = str(Path(__file__).parent / f"test_rx/bin/{build_config}/test_rx_{build_config}_{build_config}.xe")
     assert Path(xe).exists(), f"Cannot find {xe}"
 
@@ -213,7 +213,7 @@ def test_rx_stream(config, stream, capfd):
 )
 @pytest.mark.parametrize("config", CONFIGS)
 def test_rx_samfreq_change(config, stream0, stream1, capfd):
-    build_config = f"{config.upper()}_{300}_{stream0.sam_freq}"
+    build_config = f"rx_{config.upper()}_{300}_{stream0.sam_freq}"
     xe = str(Path(__file__).parent / f"test_rx/bin/{build_config}/test_rx_{build_config}_{build_config}.xe")
     assert Path(xe).exists(), f"Cannot find {xe}"
 
