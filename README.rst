@@ -20,8 +20,9 @@ Related Application Notes
 
 The following application notes use this library:
 
-  * AN00231 - SPDIF Receive to I2S output using Asynchronous Sample Rate Conversion
-  * TODO update to AN02003 etc.
+  * `AN02003: SPDIF/ADAT/I2S Receive to |I2S| Slave Bridge with ASRC <https://www.xmos.com/file/an02003>`_
+
+Several simple usage examples are also included in the ``examples`` directory.
 
 Software version and dependencies
 .................................
