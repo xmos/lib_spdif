@@ -61,9 +61,12 @@ pipeline {
       steps {
         dir("${REPO}") {
           withVenv {
-            // sh "pip install git+ssh://git@github.com/xmos/xmosdoc@${params.XMOSDOC_VERSION}"
-            // sh 'xmosdoc'
-            // zip zipFile: "${REPO}_docs.zip", archive: true, dir: 'doc/_build'
+            sh "pip install git+ssh://git@github.com/xmos/xmosdoc@${params.XMOSDOC_VERSION}"
+            sh 'xmosdoc'
+            // Zip and archive doc files
+            zip dir: "doc/_build/html", zipFile: "lib_spdif_docs_html.zip"
+            archiveArtifacts artifacts: "lib_spdif_docs_html.zip"
+            archiveArtifacts artifacts: "doc/_build/pdf/lib_spdif*.pdf"
           } // withVenv
         } // dir
       }
@@ -77,7 +80,23 @@ pipeline {
     //     }
     //   }
     // }
-    stage("Tests") {
+    stage('Build Examples') {
+      steps {
+        dir("${REPO}/examples") {
+          viewEnv(){
+            withVenv() {
+              withTools(params.TOOLS_VERSION) {
+                  sh 'cmake -B build -G "Unix Makefiles"'
+                  sh 'xmake -j 16 -C build'
+                  sh "pytest -v --junitxml=pytest_result.xml -n auto"
+              }
+            }
+          }
+          archiveArtifacts artifacts: "**/bin/*.xe", fingerprint: true, allowEmptyArchive: true
+        } // dir
+      } // steps
+    } // stage
+    stage("Build and run tests") {
       steps {
         dir("${REPO}/tests"){
           viewEnv(){
@@ -89,16 +108,6 @@ pipeline {
               }
             }
           }
-        }
-      }
-    }
-    stage('xCORE builds') {
-      steps {
-        dir("${REPO}") {
-          // xcoreAllAppsBuild('examples')
-          // runXdoc("${REPO}/doc")
-          // Archive all the generated .pdf docs
-          // archiveArtifacts artifacts: "${REPO}/**/pdf/*.pdf", fingerprint: true, allowEmptyArchive: true
         }
       }
     }
