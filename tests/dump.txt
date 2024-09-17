@@ -1,0 +1,63 @@
+digraph "lib_spdif_tests" {
+node [
+  fontsize = "12"
+];
+subgraph clusterLegend {
+  label = "Legend";
+  color = black;
+  edge [ style = invis ];
+  legendNode0 [ label = "Executable", shape = egg ];
+  legendNode1 [ label = "Static Library", shape = octagon ];
+  legendNode2 [ label = "Shared Library", shape = doubleoctagon ];
+  legendNode3 [ label = "Module Library", shape = tripleoctagon ];
+  legendNode4 [ label = "Interface Library", shape = pentagon ];
+  legendNode5 [ label = "Object Library", shape = hexagon ];
+  legendNode6 [ label = "Unknown Library", shape = septagon ];
+  legendNode7 [ label = "Custom Target", shape = box ];
+  legendNode0 -> legendNode1 [ style = solid ];
+  legendNode0 -> legendNode2 [ style = solid ];
+  legendNode0 -> legendNode3;
+  legendNode1 -> legendNode4 [ label = "Interface", style = dashed ];
+  legendNode2 -> legendNode5 [ label = "Private", style = dotted ];
+  legendNode3 -> legendNode6 [ style = solid ];
+  legendNode0 -> legendNode7;
+}
+    "node0" [ label = "rx_capture", shape = egg ];
+    "node1" [ label = "spdif_rx_analyse", shape = egg ];
+    "node2" [ label = "test_rx_rx_XS2_300_176400_rx_XS2_300_176400", shape = egg ];
+    "node3" [ label = "test_rx_rx_XS2_300_192000_rx_XS2_300_192000", shape = egg ];
+    "node4" [ label = "test_rx_rx_XS2_300_44100_rx_XS2_300_44100", shape = egg ];
+    "node5" [ label = "test_rx_rx_XS2_300_48000_rx_XS2_300_48000", shape = egg ];
+    "node6" [ label = "test_rx_rx_XS2_300_88200_rx_XS2_300_88200", shape = egg ];
+    "node7" [ label = "test_rx_rx_XS2_300_96000_rx_XS2_300_96000", shape = egg ];
+    "node8" [ label = "test_rx_rx_XS3_300_176400_rx_XS3_300_176400", shape = egg ];
+    "node9" [ label = "test_rx_rx_XS3_300_192000_rx_XS3_300_192000", shape = egg ];
+    "node10" [ label = "test_rx_rx_XS3_300_44100_rx_XS3_300_44100", shape = egg ];
+    "node11" [ label = "test_rx_rx_XS3_300_48000_rx_XS3_300_48000", shape = egg ];
+    "node12" [ label = "test_rx_rx_XS3_300_88200_rx_XS3_300_88200", shape = egg ];
+    "node13" [ label = "test_rx_rx_XS3_300_96000_rx_XS3_300_96000", shape = egg ];
+    "node14" [ label = "test_rx_tx_XS2_300_176400_tx_XS2_300_176400", shape = egg ];
+    "node15" [ label = "test_rx_tx_XS2_300_192000_tx_XS2_300_192000", shape = egg ];
+    "node16" [ label = "test_rx_tx_XS2_300_44100_tx_XS2_300_44100", shape = egg ];
+    "node17" [ label = "test_rx_tx_XS2_300_48000_tx_XS2_300_48000", shape = egg ];
+    "node18" [ label = "test_rx_tx_XS2_300_88200_tx_XS2_300_88200", shape = egg ];
+    "node19" [ label = "test_rx_tx_XS2_300_96000_tx_XS2_300_96000", shape = egg ];
+    "node20" [ label = "test_rx_tx_XS2_500_176400_tx_XS2_500_176400", shape = egg ];
+    "node21" [ label = "test_rx_tx_XS2_500_192000_tx_XS2_500_192000", shape = egg ];
+    "node22" [ label = "test_rx_tx_XS2_500_44100_tx_XS2_500_44100", shape = egg ];
+    "node23" [ label = "test_rx_tx_XS2_500_48000_tx_XS2_500_48000", shape = egg ];
+    "node24" [ label = "test_rx_tx_XS2_500_88200_tx_XS2_500_88200", shape = egg ];
+    "node25" [ label = "test_rx_tx_XS2_500_96000_tx_XS2_500_96000", shape = egg ];
+    "node26" [ label = "test_rx_tx_XS3_375_176400_tx_XS3_375_176400", shape = egg ];
+    "node27" [ label = "test_rx_tx_XS3_375_192000_tx_XS3_375_192000", shape = egg ];
+    "node28" [ label = "test_rx_tx_XS3_375_44100_tx_XS3_375_44100", shape = egg ];
+    "node29" [ label = "test_rx_tx_XS3_375_48000_tx_XS3_375_48000", shape = egg ];
+    "node30" [ label = "test_rx_tx_XS3_375_88200_tx_XS3_375_88200", shape = egg ];
+    "node31" [ label = "test_rx_tx_XS3_375_96000_tx_XS3_375_96000", shape = egg ];
+    "node32" [ label = "test_rx_tx_XS3_600_176400_tx_XS3_600_176400", shape = egg ];
+    "node33" [ label = "test_rx_tx_XS3_600_192000_tx_XS3_600_192000", shape = egg ];
+    "node34" [ label = "test_rx_tx_XS3_600_44100_tx_XS3_600_44100", shape = egg ];
+    "node35" [ label = "test_rx_tx_XS3_600_48000_tx_XS3_600_48000", shape = egg ];
+    "node36" [ label = "test_rx_tx_XS3_600_88200_tx_XS3_600_88200", shape = egg ];
+    "node37" [ label = "test_rx_tx_XS3_600_96000_tx_XS3_600_96000", shape = egg ];
+}
