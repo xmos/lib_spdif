@@ -142,7 +142,6 @@ def test_rx(capfd, config, sam_freq, sample_freq_estimate):
     result = Pyxsim.run_on_simulator_(
         xe,
         simthreads=simthreads,
-        instTracing=True,
         tester=tester,
         capfd=capfd,
         timeout=pyxsim_timeout,
@@ -194,7 +193,6 @@ def test_rx_stream(config, stream, capfd):
     result = Pyxsim.run_on_simulator_(
         xe,
         simthreads=simthreads,
-        instTracing=True,
         do_xe_prebuild=False,
         tester=tester,
         capfd=capfd,
@@ -271,7 +269,6 @@ def test_rx_samfreq_change(config, stream0, stream1, capfd):
     result = Pyxsim.run_on_simulator_(
         xe,
         simthreads=simthreads,
-        instTracing=True,
         do_xe_prebuild=False,
         tester=tester,
         capfd=capfd,

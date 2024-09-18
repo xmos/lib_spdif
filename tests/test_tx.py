@@ -79,7 +79,6 @@ def test_tx(capfd, config, sam_freq, duration, ramps):
     result = Pyxsim.run_on_simulator_(
         xe,
         simthreads=simthreads,
-        instTracing=True,
         do_xe_prebuild=False,
         tester=tester,
         capfd=capfd,
