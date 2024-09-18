@@ -9,7 +9,7 @@ External Signal Description
 The library implements the S/PDIF (Sony/Philips Digital Interface
 Format) protocol for transporting uncompressed stereo PCM data of up to 24bits.
 
-.. note:: The S/PDIF signal shown in the diagrams below are digital representations of S/PDIF and not an actual signal
+.. note:: The S/PDIF connections shown in the diagrams below are digital representations of S/PDIF and not an actual signal
    suitable for external devices (which is 0.5V pk-pk etc). External circuitry is required to interface with the chosen
    medium (optical or electrical).
 
