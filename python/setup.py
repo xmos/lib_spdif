@@ -13,8 +13,8 @@ setuptools.setup(
     name='lib_spdif',
     packages=setuptools.find_packages(),
     install_requires=[
-        'flake8~=3.8',
-        "pytest~=7.1",
+        'flake8~=7.1.1',
+        "pytest~=8.3.2",
     ],
     dependency_links=[
     ],
