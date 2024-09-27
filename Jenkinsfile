@@ -40,7 +40,8 @@ pipeline {
         sh 'cd test_support && git checkout 961532d89a98b9df9ccbce5abd0d07d176ceda40'
 
         dir("${REPO}") {
-          viewEnv(){
+          createVenv()
+          withVenv(){
             checkout scm
             withTools(params.TOOLS_VERSION) {
               dir("examples") {
@@ -59,7 +60,7 @@ pipeline {
     stage('Documentation') {
       steps {
         dir("${REPO}") {
-          viewEnv(){
+          withVenv(){
             warnError("Docs") {
                 sh "docker pull ghcr.io/xmos/xmosdoc:$XMOSDOC_VERSION"
                 sh """docker run -u "\$(id -u):\$(id -g)" \
@@ -88,7 +89,7 @@ pipeline {
     stage('Build Examples') {
       steps {
         dir("${REPO}/examples") {
-          viewEnv(){
+          withVenv(){
             withTools(params.TOOLS_VERSION) {
               sh 'cmake -B build -G "Unix Makefiles"'
               sh 'xmake -j 16 -C build'
@@ -101,12 +102,11 @@ pipeline {
     stage("Build and run tests") {
       steps {
         dir("${REPO}/tests"){
-          viewEnv(){
+          withVenv(){
             withTools(params.TOOLS_VERSION) {
               sh 'cmake -B build -G "Unix Makefiles"'
               sh 'xmake -j 16 -C build'
-              sh 'pip freeze'
-              runPytest('-s -vv')
+              runPytest('-vv')
             }
           }
         }
