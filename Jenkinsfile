@@ -37,16 +37,14 @@ pipeline {
       steps {
         println "Stage running on: ${env.NODE_NAME}"
         
-        sh 'git clone git@github.com:xmos/test_support'
+        sh 'git clone git@github.com:xmos/test_support --branch 961532d89a98b9df9ccbce5abd0d07d176ceda40'
 
         dir("${REPO}") {
           checkout scm
           installPipfile(false)
-          withVenv {
-            withTools(params.TOOLS_VERSION) {
-              dir("examples") {
-                sh 'cmake -B build -G "Unix Makefiles"'
-              }
+          withTools(params.TOOLS_VERSION) {
+            dir("examples") {
+              sh 'cmake -B build -G "Unix Makefiles"'
             }
           }
         }
@@ -60,14 +58,12 @@ pipeline {
     stage('Documentation') {
       steps {
         dir("${REPO}") {
-          withVenv {
-            sh "pip install git+ssh://git@github.com/xmos/xmosdoc@${params.XMOSDOC_VERSION}"
-            sh 'xmosdoc'
-            // Zip and archive doc files
-            zip dir: "doc/_build/html", zipFile: "lib_spdif_docs_html.zip"
-            archiveArtifacts artifacts: "lib_spdif_docs_html.zip"
-            archiveArtifacts artifacts: "doc/_build/pdf/lib_spdif*.pdf"
-          } // withVenv
+          sh "pip install git+ssh://git@github.com/xmos/xmosdoc@${params.XMOSDOC_VERSION}"
+          sh 'xmosdoc'
+           // Zip and archive doc files
+          zip dir: "doc/_build/html", zipFile: "lib_spdif_docs_html.zip"
+          archiveArtifacts artifacts: "lib_spdif_docs_html.zip"
+          archiveArtifacts artifacts: "doc/_build/pdf/lib_spdif*.pdf"
         } // dir
       }
     }
@@ -84,11 +80,9 @@ pipeline {
       steps {
         dir("${REPO}/examples") {
           viewEnv(){
-            withVenv() {
-              withTools(params.TOOLS_VERSION) {
-                  sh 'cmake -B build -G "Unix Makefiles"'
-                  sh 'xmake -j 16 -C build'
-              }
+            withTools(params.TOOLS_VERSION) {
+              sh 'cmake -B build -G "Unix Makefiles"'
+              sh 'xmake -j 16 -C build'
             }
           }
           archiveArtifacts artifacts: "**/bin/*.xe", fingerprint: true, allowEmptyArchive: true
@@ -99,12 +93,10 @@ pipeline {
       steps {
         dir("${REPO}/tests"){
           viewEnv(){
-            withVenv() {
-              withTools(params.TOOLS_VERSION) {
-                  sh 'cmake -B build -G "Unix Makefiles"'
-                  sh 'xmake -j 16 -C build'
-                  sh "pytest -v --junitxml=pytest_result.xml -n auto"
-              }
+            withTools(params.TOOLS_VERSION) {
+              sh 'cmake -B build -G "Unix Makefiles"'
+              sh 'xmake -j 16 -C build'
+              sh "pytest -v --junitxml=pytest_result.xml -n auto"
             }
           }
         }
