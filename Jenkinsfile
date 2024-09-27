@@ -59,12 +59,18 @@ pipeline {
       steps {
         dir("${REPO}") {
           viewEnv(){
-            sh "pip install git+ssh://git@github.com/xmos/xmosdoc@${params.XMOSDOC_VERSION}"
-            sh 'xmosdoc'
-            // Zip and archive doc files
-            zip dir: "doc/_build/html", zipFile: "lib_spdif_docs_html.zip"
-            archiveArtifacts artifacts: "lib_spdif_docs_html.zip"
-            archiveArtifacts artifacts: "doc/_build/pdf/lib_spdif*.pdf"
+            warnError("Docs") {
+                sh "docker pull ghcr.io/xmos/xmosdoc:$XMOSDOC_VERSION"
+                sh """docker run -u "\$(id -u):\$(id -g)" \
+                      --rm \
+                      -v \$(pwd):/build \
+                      ghcr.io/xmos/xmosdoc:$XMOSDOC_VERSION -v html latex"""
+
+                // Zip and archive doc files
+                zip dir: "doc/_build/html", zipFile: "${REPO}_docs_html.zip"
+                archiveArtifacts artifacts: "${REPO}_docs_html.zip"
+                archiveArtifacts artifacts: "doc/_build/pdf/${REPO}*.pdf"
+            }
           }
         } // dir
       }
