@@ -58,12 +58,14 @@ pipeline {
     stage('Documentation') {
       steps {
         dir("${REPO}") {
-          sh "pip install git+ssh://git@github.com/xmos/xmosdoc@${params.XMOSDOC_VERSION}"
-          sh 'xmosdoc'
-           // Zip and archive doc files
-          zip dir: "doc/_build/html", zipFile: "lib_spdif_docs_html.zip"
-          archiveArtifacts artifacts: "lib_spdif_docs_html.zip"
-          archiveArtifacts artifacts: "doc/_build/pdf/lib_spdif*.pdf"
+          viewEnv(){
+            sh "pip install git+ssh://git@github.com/xmos/xmosdoc@${params.XMOSDOC_VERSION}"
+            sh 'xmosdoc'
+            // Zip and archive doc files
+            zip dir: "doc/_build/html", zipFile: "lib_spdif_docs_html.zip"
+            archiveArtifacts artifacts: "lib_spdif_docs_html.zip"
+            archiveArtifacts artifacts: "doc/_build/pdf/lib_spdif*.pdf"
+          }
         } // dir
       }
     }
