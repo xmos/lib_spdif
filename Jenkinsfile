@@ -40,9 +40,9 @@ pipeline {
         sh 'cd test_support && git checkout 961532d89a98b9df9ccbce5abd0d07d176ceda40'
 
         dir("${REPO}") {
-          createVenv()
           withVenv(){
             checkout scm
+            installPipfile(false)
             withTools(params.TOOLS_VERSION) {
               dir("examples") {
                 sh 'cmake -B build -G "Unix Makefiles"'
@@ -60,19 +60,17 @@ pipeline {
     stage('Documentation') {
       steps {
         dir("${REPO}") {
-          withVenv(){
-            warnError("Docs") {
-                sh "docker pull ghcr.io/xmos/xmosdoc:$XMOSDOC_VERSION"
-                sh """docker run -u "\$(id -u):\$(id -g)" \
-                      --rm \
-                      -v \$(pwd):/build \
-                      ghcr.io/xmos/xmosdoc:$XMOSDOC_VERSION -v html latex"""
+          warnError("Docs") {
+            sh "docker pull ghcr.io/xmos/xmosdoc:$XMOSDOC_VERSION"
+            sh """docker run -u "\$(id -u):\$(id -g)" \
+                  --rm \
+                  -v \$(pwd):/build \
+                  ghcr.io/xmos/xmosdoc:$XMOSDOC_VERSION -v html latex"""
 
-                // Zip and archive doc files
-                zip dir: "doc/_build/html", zipFile: "${REPO}_docs_html.zip"
-                archiveArtifacts artifacts: "${REPO}_docs_html.zip"
-                archiveArtifacts artifacts: "doc/_build/pdf/${REPO}*.pdf"
-            }
+            // Zip and archive doc files
+            zip dir: "doc/_build/html", zipFile: "${REPO}_docs_html.zip"
+            archiveArtifacts artifacts: "${REPO}_docs_html.zip"
+            archiveArtifacts artifacts: "doc/_build/pdf/${REPO}*.pdf"
           }
         } // dir
       }
