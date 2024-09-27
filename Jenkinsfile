@@ -42,6 +42,9 @@ pipeline {
         dir("${REPO}") {
           checkout scm
           createVenv()
+          withVenv(){
+            installPipfile(false)
+          }           
           withTools(params.TOOLS_VERSION) {
             dir("examples") {
               sh 'cmake -B build -G "Unix Makefiles"'
