@@ -9,8 +9,7 @@ pipeline {
   }
   environment {
     REPO = 'lib_spdif'
-    PYTHON_VERSION = "3.10.5" // Move to 3.12.1 and in requirements
-    VENV_DIRNAME = ".venv"
+    PYTHON_VERSION = "3.12.1"
   }
   options {
     skipDefaultCheckout()
