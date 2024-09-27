@@ -40,11 +40,12 @@ pipeline {
         sh 'cd test_support && git checkout 961532d89a98b9df9ccbce5abd0d07d176ceda40'
 
         dir("${REPO}") {
-          checkout scm
-          installPipfile(false)
-          withTools(params.TOOLS_VERSION) {
-            dir("examples") {
-              sh 'cmake -B build -G "Unix Makefiles"'
+          viewEnv(){
+            checkout scm
+            withTools(params.TOOLS_VERSION) {
+              dir("examples") {
+                sh 'cmake -B build -G "Unix Makefiles"'
+              }
             }
           }
         }
@@ -104,7 +105,8 @@ pipeline {
             withTools(params.TOOLS_VERSION) {
               sh 'cmake -B build -G "Unix Makefiles"'
               sh 'xmake -j 16 -C build'
-              sh "pytest -v --junitxml=pytest_result.xml --numprocesses=auto"
+              sh 'pip freeze'
+              runPytest('-s -vv')
             }
           }
         }
