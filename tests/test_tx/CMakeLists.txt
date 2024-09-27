@@ -48,8 +48,6 @@ foreach(i RANGE 0 ${NUM_CONFIGS})
 
         set(CONFIG "tx_${ARCH}_${CORE_FREQ}_${SAM_FREQ}")
 
-        message(STATUS "XN_FILE: ${XN_FILE} ARCH: ${ARCH} CORE_FREQ: ${CORE_FREQ} SAM_FREQ: ${SAM_FREQ} MCLK_FREQ: ${MCLK_FREQ}")
-
         project(test_rx_${CONFIG})
         set(APP_HW_TARGET           ${XN_FILE})
         set(APP_COMPILER_FLAGS_${CONFIG}

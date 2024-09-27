@@ -32,9 +32,6 @@ foreach(i RANGE 0 ${NUM_CONFIGS})
         string(JSON SAM_FREQ GET ${SAM_FREQS_LIST} ${j})
         set(CONFIG "rx_${ARCH}_${CORE_FREQ}_${SAM_FREQ}")
 
-        message(STATUS "CONFIG ${CONFIG} - XN_FILE ${XN_FILE} ARCH ${ARCH} CORE_FREQ ${CORE_FREQ}")
-
-
         project(test_rx_${CONFIG})
         set(APP_HW_TARGET           ${XN_FILE})
         set(APP_COMPILER_FLAGS_${CONFIG}
