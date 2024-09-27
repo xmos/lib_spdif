@@ -37,7 +37,8 @@ pipeline {
       steps {
         println "Stage running on: ${env.NODE_NAME}"
         
-        sh 'git clone git@github.com:xmos/test_support --branch 961532d89a98b9df9ccbce5abd0d07d176ceda40'
+        sh 'git clone git@github.com:xmos/test_support'
+        sh 'cd test_support && git checkout 961532d89a98b9df9ccbce5abd0d07d176ceda40'
 
         dir("${REPO}") {
           checkout scm
