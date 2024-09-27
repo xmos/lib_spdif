@@ -6,8 +6,9 @@
 #include <xscope.h>
 #include <print.h>
 
-#define ARRAY_LEN_0 130129
-#define ARRAY_LEN_1 130409
+// Sized to allow as much buffer as possible
+#define ARRAY_LEN_0 129683
+#define ARRAY_LEN_1 129960
 
 #ifndef OPTICAL
 #define OPTICAL 1

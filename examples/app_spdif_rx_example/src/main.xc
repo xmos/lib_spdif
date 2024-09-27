@@ -1,4 +1,4 @@
-// Copyright 2014-2023 XMOS LIMITED.
+// Copyright 2014-2024 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 #include <xs1.h>
@@ -10,9 +10,10 @@
 
 on tile[0]: out             port    p_ctrl          = XS1_PORT_8D;
 on tile[0]: in              port    p_i2c_sda       = XS1_PORT_1M;
-on tile[0]: in              port    p_coax_rx       = XS1_PORT_1N;
 on tile[0]: in              port    p_opt_rx        = XS1_PORT_1O;
 on tile[0]: in              port    p_word_clk      = XS1_PORT_1P;
+
+on tile[0]: in              port    p_coax_rx       = XS1_PORT_1N;
 on tile[0]:                 clock   audio_clk       = XS1_CLKBLK_1;
 
 void handle_samples(streaming chanend c)
@@ -73,4 +74,4 @@ int main(void)
         on tile[0]: handle_samples(c);
     }
     return 0;
-}
+} // end

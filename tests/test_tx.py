@@ -11,15 +11,15 @@ from spdif_test_utils import (
     Frames,
     freq_for_sample_rate,
 )
+import json
+
+with open(Path(__file__).parent / "test_tx/test_params.json") as f:
+    params = json.load(f)
 
 MAX_CYCLES = 15000000
-SAM_FREQS = [44100, 48000, 88200, 96000, 176400, 192000]
-CONFIGS = ["xs2", "xs2_300", "xs3", "xs3_375"]
 
-
-def _get_duration():
-    return 193
-
+SAM_FREQS = params["SAM_FREQS"]
+CONFIGS = [f"{item['ARCH'].lower()}_{item['CORE_FREQ']}" for item in params["CONFIG"]]
 
 def _get_mclk_freq(sam_freq):
     if sam_freq in [48000, 96000, 192000]:
@@ -30,7 +30,7 @@ def _get_mclk_freq(sam_freq):
         assert False
 
 
-def tx_uncollect(config, sam_freq):
+def tx_uncollect(config, sam_freq, ramps, duration):
     reduced_clock_configs = ["xs2_300", "xs3_375"]
     reduced_freq_set = SAM_FREQS
     if config in reduced_clock_configs and sam_freq not in reduced_freq_set:
@@ -44,17 +44,24 @@ def tx_uncollect(config, sam_freq):
 @pytest.mark.uncollect_if(func=tx_uncollect)
 @pytest.mark.parametrize("sam_freq", SAM_FREQS)
 @pytest.mark.parametrize("config", CONFIGS)
-def test_tx(capfd, config, sam_freq):
-    xe = str(Path(__file__).parent / f"test_tx/bin/{config}/test_tx_{config}.xe")
+@pytest.mark.parametrize("duration", [params["NO_OF_SAMPLES"]])
+@pytest.mark.parametrize("ramps", [[params["RAMP0"], params["RAMP1"]],])
+def test_tx(capfd, config, sam_freq, duration, ramps):
+    
+
+    build_config = f"tx_{config.upper()}_{sam_freq}"
+    xe = str(Path(__file__).parent / f"test_tx/bin/{build_config}/test_rx_{build_config}_{build_config}.xe")
+    assert Path(xe).exists(), f"Cannot find {xe}"
+
     p_clock = "tile[1]:XS1_PORT_1B"
     p_spdif_out = "tile[1]:XS1_PORT_1A"
-    no_of_samples = _get_duration()
+    no_of_samples = duration
     no_of_blocks = (no_of_samples // 192) + (1 if no_of_samples % 192 != 0 else 0)
     mclk_freq = _get_mclk_freq(sam_freq)
 
     audio = [
-        ["ramp", -7],
-        ["ramp", 5],
+        ["ramp", ramps[0]],
+        ["ramp", ramps[1]],
     ]
 
     tester = testers.ComparisonTester(
@@ -69,23 +76,13 @@ def test_tx(capfd, config, sam_freq):
 
     simargs = ["--max-cycles", str(MAX_CYCLES)]
 
-    result = Pyxsim.run_on_simulator(
+    result = Pyxsim.run_on_simulator_(
         xe,
         simthreads=simthreads,
-        instTracing=True,
-        clean_before_build=True,
+        do_xe_prebuild=False,
         tester=tester,
         capfd=capfd,
         timeout=1500,
         simargs=simargs,
-        build_options=[
-            f"CONFIG={config}",
-            "EXTRA_BUILD_FLAGS="
-            + f" -DSAMPLE_FREQUENCY_HZ={sam_freq}"
-            + f" -DCHAN_RAMP_0={audio[0][1]}"
-            + f" -DCHAN_RAMP_1={audio[1][1]}"
-            + f" -DNO_OF_SAMPLES={no_of_samples}"
-            + f" -DMCLK_FREQUENCY={mclk_freq}",
-        ],
     )
     assert result

@@ -1,6 +1,11 @@
 lib_spdif change log
 ====================
 
+6.2.0
+-----
+
+  * CHANGED:   Use XCommon CMake for examples and tests
+
 6.1.1
 -----
 
