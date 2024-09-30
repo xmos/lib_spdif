@@ -1,4 +1,4 @@
-@Library('xmos_jenkins_shared_library@v0.29.0') _
+@Library('xmos_jenkins_shared_library@v0.34.0') _
 
 getApproval()
 
@@ -8,22 +8,71 @@ pipeline {
   }
   environment {
     REPO = 'lib_spdif'
-    VIEW = getViewName(REPO)
+    PYTHON_VERSION = "3.12.1"
   }
   options {
     skipDefaultCheckout()
     timestamps()
-    buildDiscarder(xmosDiscardBuildSettings())
+    // on develop discard builds after a certain number else keep forever
+    buildDiscarder(logRotator(
+      numToKeepStr:         env.BRANCH_NAME ==~ /develop/ ? '25' : '',
+      artifactNumToKeepStr: env.BRANCH_NAME ==~ /develop/ ? '25' : ''
+    ))  }
+  parameters {
+    string(
+      name: 'TOOLS_VERSION',
+      defaultValue: '15.3.0',
+      description: 'The XTC tools version'
+    )
+    string(
+      name: 'XMOSDOC_VERSION',
+      defaultValue: 'v6.0.0',
+      description: 'The xmosdoc version'
+    )
   }
   stages {
-    stage('Get view') {
+    stage('Get Sandbox') {
       steps {
-        xcorePrepareSandbox("${VIEW}", "${REPO}")
+        println "Stage running on: ${env.NODE_NAME}"
+        
+        sh 'git clone git@github.com:xmos/test_support'
+        sh 'cd test_support && git checkout 961532d89a98b9df9ccbce5abd0d07d176ceda40'
+
+        dir("${REPO}") {
+          checkout scm
+          createVenv()
+          withVenv(){
+            installPipfile(false)
+          }           
+          withTools(params.TOOLS_VERSION) {
+            dir("examples") {
+              sh 'cmake -B build -G "Unix Makefiles"'
+            }
+          }
+        }
       }
     }
     stage('Library checks') {
       steps {
-        xcoreLibraryChecks("${REPO}", false)
+        runLibraryChecks("${WORKSPACE}/${REPO}", "v2.0.0")
+      }
+    }
+    stage('Documentation') {
+      steps {
+        dir("${REPO}") {
+          warnError("Docs") {
+            sh "docker pull ghcr.io/xmos/xmosdoc:$XMOSDOC_VERSION"
+            sh """docker run -u "\$(id -u):\$(id -g)" \
+                  --rm \
+                  -v \$(pwd):/build \
+                  ghcr.io/xmos/xmosdoc:$XMOSDOC_VERSION -v html latex"""
+
+            // Zip and archive doc files
+            zip dir: "doc/_build/html", zipFile: "${REPO}_docs_html.zip"
+            archiveArtifacts artifacts: "${REPO}_docs_html.zip"
+            archiveArtifacts artifacts: "doc/_build/pdf/${REPO}*.pdf"
+          }
+        } // dir
       }
     }
     // stage('Generate') {
@@ -35,24 +84,29 @@ pipeline {
     //     }
     //   }
     // }
-    stage("Tests") {
+    stage('Build Examples') {
       steps {
-        dir("${REPO}/tests"){
-          viewEnv(){
-            withVenv() {
-              sh "pytest -v --junitxml=pytest_result.xml"
+        dir("${REPO}/examples") {
+          withVenv(){
+            withTools(params.TOOLS_VERSION) {
+              sh 'cmake -B build -G "Unix Makefiles"'
+              sh 'xmake -j 16 -C build'
             }
           }
-        }
-      }
-    }
-    stage('xCORE builds and doc') {
+          archiveArtifacts artifacts: "**/bin/*.xe", fingerprint: true, allowEmptyArchive: true
+        } // dir
+      } // steps
+    } // stage
+    stage("Build and run tests") {
       steps {
-        dir("${REPO}") {
-          xcoreAllAppsBuild('examples')
-          runXdoc("${REPO}/doc")
-          // Archive all the generated .pdf docs
-          archiveArtifacts artifacts: "${REPO}/**/pdf/*.pdf", fingerprint: true, allowEmptyArchive: true
+        dir("${REPO}/tests"){
+          withVenv(){
+            withTools(params.TOOLS_VERSION) {
+              sh 'cmake -B build -G "Unix Makefiles"'
+              sh 'xmake -j 16 -C build'
+              runPytest('-vv')
+            }
+          }
         }
       }
     }
@@ -60,9 +114,6 @@ pipeline {
   post {
     always {
       junit "${REPO}/tests/pytest_result.xml"
-    }
-    success {
-      updateViewfiles()
     }
     cleanup {
       xcoreCleanSandbox()

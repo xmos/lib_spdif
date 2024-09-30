@@ -14,12 +14,16 @@ from spdif_test_utils import (
     Recorded_stream,
     freq_for_sample_rate,
 )
+import json
 
 MAX_CYCLES = 200000000
 pyxsim_timeout = 3600
 KHz = 1000
 MHz = 1000 * KHz
 
+
+with open(Path(__file__).parent / "test_rx/test_params.json") as f:
+    params = json.load(f)
 
 # When set to 0 the first sub-frame sent is Z the offset can be used to change where in the frame
 # the test starts sending and may help reduce time in the simulator to first Z sub-frame out
@@ -29,8 +33,8 @@ QUICK_START_OFFSET = 0
 # that it can complete the test while still receiving data
 NO_OF_TEST_BLOCKS = 7
 
-SAM_FREQS = [44100, 48000, 88200, 96000, 176400, 192000]
-CONFIGS = ["xs2", "xs3"]
+SAM_FREQS = params["SAM_FREQS"]
+CONFIGS = [item["ARCH"].lower() for item in params["CONFIG"]]
 
 STREAMS = [
     Recorded_stream("44100-coax.stream", [["ramp", 5], ["ramp", -7]], 44100, 100 * MHz),
@@ -106,7 +110,10 @@ def test_rx(capfd, config, sam_freq, sample_freq_estimate):
     # time taken in the simulator to correct frequency currently too long for tests. Re-enable sample rate mismatch once resolved
     # sample_freq_estimate = sam_freq
 
-    xe = str(Path(__file__).parent / f"test_rx/bin/{config}/test_rx_{config}.xe")
+    build_config = f"rx_{config.upper()}_{300}_{sam_freq}"
+    xe = str(Path(__file__).parent / f"test_rx/bin/{build_config}/test_rx_{build_config}_{build_config}.xe")
+    assert Path(xe).exists(), f"Cannot find {xe}"
+
     p_spdif_in = "tile[0]:XS1_PORT_1E"
     p_debug_out = "tile[0]:XS1_PORT_32A"
     p_debug_strobe = "tile[0]:XS1_PORT_1F"
@@ -132,19 +139,14 @@ def test_rx(capfd, config, sam_freq, sample_freq_estimate):
 
     simargs = ["--max-cycles", str(MAX_CYCLES)]
 
-    result = Pyxsim.run_on_simulator(
+    result = Pyxsim.run_on_simulator_(
         xe,
         simthreads=simthreads,
-        instTracing=True,
-        clean_before_build=True,
         tester=tester,
         capfd=capfd,
         timeout=pyxsim_timeout,
         simargs=simargs,
-        build_options=[
-            f"CONFIG={config}",
-            f"EXTRA_BUILD_FLAGS=-DSAMPLE_FREQ_ESTIMATE={sample_freq_estimate}",
-        ],
+        do_xe_prebuild=False
     )
     assert result
 
@@ -156,7 +158,11 @@ def test_rx(capfd, config, sam_freq, sample_freq_estimate):
 @pytest.mark.parametrize("stream", STREAMS, ids=param_id)
 @pytest.mark.parametrize("config", CONFIGS)
 def test_rx_stream(config, stream, capfd):
-    xe = str(Path(__file__).parent / f"test_rx/bin/{config}/test_rx_{config}.xe")
+
+    build_config = f"rx_{config.upper()}_{300}_{stream.sam_freq}"
+    xe = str(Path(__file__).parent / f"test_rx/bin/{build_config}/test_rx_{build_config}_{build_config}.xe")
+    assert Path(xe).exists(), f"Cannot find {xe}"
+
     p_spdif_in = "tile[0]:XS1_PORT_1E"
     p_debug_out = "tile[0]:XS1_PORT_32A"
     p_debug_strobe = "tile[0]:XS1_PORT_1F"
@@ -184,19 +190,14 @@ def test_rx_stream(config, stream, capfd):
 
     simargs = ["--max-cycles", str(MAX_CYCLES)]
 
-    result = Pyxsim.run_on_simulator(
+    result = Pyxsim.run_on_simulator_(
         xe,
         simthreads=simthreads,
-        instTracing=True,
-        clean_before_build=True,
+        do_xe_prebuild=False,
         tester=tester,
         capfd=capfd,
         timeout=pyxsim_timeout,
         simargs=simargs,
-        build_options=[
-            f"CONFIG={config}",
-            f"EXTRA_BUILD_FLAGS=-DSAMPLE_FREQ_ESTIMATE={stream.sam_freq}",
-        ],
     )
     assert result
 
@@ -210,7 +211,10 @@ def test_rx_stream(config, stream, capfd):
 )
 @pytest.mark.parametrize("config", CONFIGS)
 def test_rx_samfreq_change(config, stream0, stream1, capfd):
-    xe = str(Path(__file__).parent / f"test_rx/bin/{config}/test_rx_{config}.xe")
+    build_config = f"rx_{config.upper()}_{300}_{stream0.sam_freq}"
+    xe = str(Path(__file__).parent / f"test_rx/bin/{build_config}/test_rx_{build_config}_{build_config}.xe")
+    assert Path(xe).exists(), f"Cannot find {xe}"
+
     p_spdif_in = "tile[0]:XS1_PORT_1E"
     p_debug_out = "tile[0]:XS1_PORT_32A"
     p_debug_strobe = "tile[0]:XS1_PORT_1F"
@@ -262,18 +266,13 @@ def test_rx_samfreq_change(config, stream0, stream1, capfd):
 
     simargs = ["--max-cycles", str(MAX_CYCLES)]
 
-    result = Pyxsim.run_on_simulator(
+    result = Pyxsim.run_on_simulator_(
         xe,
         simthreads=simthreads,
-        instTracing=True,
-        clean_before_build=True,
+        do_xe_prebuild=False,
         tester=tester,
         capfd=capfd,
         timeout=pyxsim_timeout,
         simargs=simargs,
-        build_options=[
-            f"CONFIG={config}",
-            f"EXTRA_BUILD_FLAGS=-DSAMPLE_FREQ_ESTIMATE={stream0.sam_freq}",
-        ],
     )
     assert result
