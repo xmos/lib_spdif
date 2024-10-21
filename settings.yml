@@ -1,7 +1,8 @@
+# This file relates to internal XMOS infrastructure and should be ignored by external users
 ---
 lib_name: lib_spdif
 project: '{{lib_name}}'
-title: '{{lib_name}}: XMOS SPDIF Library'
+title: '{{lib_name}}: S/PDIF library'
 version: 6.2.0
 
 documentation:
