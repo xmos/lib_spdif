@@ -4,7 +4,7 @@ project(spdif_rx_analyse)
 
 set(APP_HW_TARGET           xcore_ai_generic_500.xn)
 
-include(${CMAKE_CURRENT_LIST_DIR}/../../deps.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../test_deps.cmake)
 
 set(APP_COMPILER_FLAGS      -O2
                             -report
