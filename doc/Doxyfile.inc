@@ -1,7 +1,7 @@
 # This file provides overrides to the Doxyfile configuration
 
 PROJECT_NAME           = lib_spdif
-PROJECT_BRIEF          = "SPDIF software libraries"
+PROJECT_BRIEF          = "S/PDIF library"
 
 INPUT                  = ../lib_spdif/api
 
