@@ -3,7 +3,7 @@
 lib_name: lib_spdif
 project: '{{lib_name}}'
 title: '{{lib_name}}: S/PDIF library'
-version: 6.2.0
+version: 6.2.1
 
 documentation:
   exclude_patterns_path: doc/exclude_patterns.inc
