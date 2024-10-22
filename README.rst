@@ -39,7 +39,7 @@ Features
 Known issues
 ************
 
-  * Transmitter has no way of setting user or validity bits (`#55` <https://github.com/xmos/lib_spdif/issues/55>`_)
+  * Transmitter has no way of setting user or validity bits (`#55 <https://github.com/xmos/lib_spdif/issues/55>`_)
 
 ****************
 Development repo
