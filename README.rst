@@ -31,33 +31,33 @@ of S/PDIF data via `xcore` ports.
 Features
 ********
 
- * Supports stereo S/PDIF receive for sample rates up to 192KHz
- * Supports stereo S/PDIF transmit for sample rates up to 192KHz
- * Fully compliant to the IEC60958 specification
+* Supports stereo S/PDIF receive for sample rates up to 192KHz
+* Supports stereo S/PDIF transmit for sample rates up to 192KHz
+* Fully compliant to the IEC60958 specification
 
 ************
 Known issues
 ************
 
-  * Transmitter has no way of setting user or validity bits (`#55 <https://github.com/xmos/lib_spdif/issues/55>`_)
+* Transmitter has no way of setting user or validity bits (`#55 <https://github.com/xmos/lib_spdif/issues/55>`_)
 
 ****************
 Development repo
 ****************
 
-  * `lib_spdif <https://www.github.com/xmos/lib_spdif>`_
+* `lib_spdif <https://www.github.com/xmos/lib_spdif>`_
 
 **************
 Required tools
 **************
 
-  * XMOS XTC Tools: 15.3.0
+* XMOS XTC Tools: 15.3.0
 
 *********************************
 Required libraries (dependencies)
 *********************************
 
-  * None
+* None
 
 *************************
 Related application notes
@@ -65,7 +65,7 @@ Related application notes
 
 The following application notes use this library:
 
-  * `AN02003: SPDIF/ADAT/I²S Receive to I²S Slave Bridge with ASRC <https://www.xmos.com/file/an02003>`_
+* `AN02003: SPDIF/ADAT/I²S Receive to I²S Slave Bridge with ASRC <https://www.xmos.com/file/an02003>`_
 
 *******
 Support
