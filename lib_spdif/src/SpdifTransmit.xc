@@ -1,4 +1,4 @@
-// Copyright 2011-2024 XMOS LIMITED.
+// Copyright 2011-2025 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 /**
@@ -187,6 +187,12 @@ void SpdifTransmit(out buffered port:32 p, chanend c_tx0, const int ctrl_left[2]
     /* Get L/R samples */
     sample_l = inuint(c_tx0);
     sample_r = inuint(c_tx0);
+    // prefill port buffers before outputting acutal data.
+    // This ensures sender thread is blocked trying to send data and not the other way around,
+    // allowing enough time between receiving data from the sender and producing the frame
+    // to output on the tx port.
+    p <: 0;
+    p <: 0;
 
 #pragma unsafe arrays
     while (1)
@@ -216,6 +222,7 @@ void SpdifTransmit(out buffered port:32 p, chanend c_tx0, const int ctrl_left[2]
             /* Test for new frequency */
             if(testct(c_tx0))
             {
+                p <: 0; // Leave port driving low when exiting
                 chkct(c_tx0, XS1_CT_END);
                 return;
             }
