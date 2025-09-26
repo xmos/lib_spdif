@@ -1,6 +1,12 @@
 lib_spdif change log
 ====================
 
+UNRELEASED
+----------
+
+  * ADDED: Support for transmitting IEC 60958-4 professional applications channel status block
+  * CHANGED: Pre-fill the SPDIF TX port buffers before starting actual data transfer
+
 6.2.1
 -----
 

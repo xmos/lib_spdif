@@ -13,6 +13,8 @@ def pytest_collection_modifyitems(config, items):
                 deselected.append(item)
             else:
                 selected.append(item)
+        else:
+            selected.append(item)
 
     config.hook.pytest_deselected(items=deselected)
     items[:] = selected
