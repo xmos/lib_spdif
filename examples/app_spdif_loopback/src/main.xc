@@ -19,6 +19,7 @@ extern "C" {
 #endif
 
 #define SAMPLE_FREQUENCY_HZ   (192000)
+#define WORD_LENGTH (24)
 
 #if(OPTICAL)
 on tile[0]: in                port    p_spdif_rx      = XS1_PORT_1O; // Optical rx
@@ -87,7 +88,7 @@ void generate_samples(chanend c, chanend c_sync)
     }
 
     printf("Generating S/PDIF samples at %dHz\n", SAMPLE_FREQUENCY_HZ);
-    spdif_tx_reconfigure_sample_rate(c,SAMPLE_FREQUENCY_HZ, mclk);
+    spdif_tx_reconfigure_sample_rate(c,SAMPLE_FREQUENCY_HZ, mclk, WORD_LENGTH);
 
     while(!exit)
     {

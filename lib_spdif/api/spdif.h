@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include <xs1.h>
 #include <xccompat.h>
-#if defined(__DOXYGEN__) || defined(__XC__) 
+#if defined(__DOXYGEN__) || defined(__XC__)
 /* These are needed to allow doxy to render properly */
 #define in_port_t in port
 #define out_port_t out port
@@ -41,6 +41,22 @@
 
 /* Helper macro for extracting sample bits from received S/PDIF subframe */
 #define SPDIF_RX_EXTRACT_SAMPLE(x) ((x & 0xFFFFFFF0) << 4)
+
+/**
+ * @def SPDIF_TX_ENABLE_PRO_CHANNEL_STATUS
+ *
+ * @brief Selects whether the S/PDIF transmitter builds a
+ *        Professional (AES3) channel status block or a
+ *        Consumer (S/PDIF) channel status block.
+ *
+ * Building consumer block by default.
+ * Can be overriden by defining SPDIF_TX_ENABLE_PRO_CHANNEL_STATUS (1)
+ * or passing a compiler build flag -DSPDIF_TX_ENABLE_PRO_CHANNEL_STATUS=1
+ * to build professional channel status block.
+ */
+#ifndef SPDIF_TX_ENABLE_PRO_CHANNEL_STATUS
+#define SPDIF_TX_ENABLE_PRO_CHANNEL_STATUS (0)
+#endif
 
 /** S/PDIF receive function.
  *
@@ -155,10 +171,13 @@ void spdif_tx(out_buffered_port_32_t p_spdif, chanend c);
  * \param sample_frequency        The required new sample frequency in Hz.
  * \param master_clock_frequency  The master_clock_frequency that the S/PDIF
  *                                transmitter is using
+ * \param word_length             word length in bits of the transmitted samples.
+ *                                Supported values - 16, 20 or 24bits
  */
 void spdif_tx_reconfigure_sample_rate(chanend c_spdif_tx,
                                       unsigned sample_frequency,
-                                      unsigned master_clock_frequency);
+                                      unsigned master_clock_frequency,
+                                      unsigned word_length);
 
 /** Output a sample pair to the S/PDIF transmitter component.
  *

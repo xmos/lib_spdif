@@ -19,6 +19,10 @@ on tile[1]: clock                   clk_audio       = XS1_CLKBLK_1;
 #define MCLK_FREQUENCY 22579200
 #endif
 
+#ifndef WORD_LENGTH
+#define WORD_LENGTH (24)
+#endif
+
 #ifndef CHAN_RAMP_0
 #define CHAN_RAMP_0 0
 #endif
@@ -37,7 +41,8 @@ void generate_samples(chanend c) {
 
     spdif_tx_reconfigure_sample_rate(c,
                                      SAMPLE_FREQUENCY_HZ,
-                                     MCLK_FREQUENCY);
+                                     MCLK_FREQUENCY,
+                                     WORD_LENGTH);
 
     for(int i = 0; i < NO_OF_SAMPLES; i++) {
         spdif_tx_output(c, lsample<<8, rsample<<8);
