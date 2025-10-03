@@ -130,11 +130,11 @@ static inline void output_word(out buffered port:32 p, unsigned encoded_word, in
 }
 
 #pragma unsafe arrays
-static inline void subframe_tx(out buffered port:32 p, unsigned sample_in, int ctrl, unsigned char encoded_preamble, int divide)
+static inline void subframe_tx(out buffered port:32 p, unsigned sample_in, int ctrl, unsigned char encoded_preamble, int divide, unsigned sample_mask)
 {
     static int lastbit = 0;
     unsigned word, sample, control, parity;
-    sample = sample_in >> 4 & 0x0FFFFFF0; /* Mask and shift to be in the correct place in the Sub-frame */
+    sample = sample_in >> 4 & sample_mask; /* Mask and shift to be in the correct place in the Sub-frame */
     control = (ctrl & 1) << 30;
     parity = parity32(sample | control | VALIDITY) << 31;
     word = sample | control | parity | VALIDITY;
@@ -173,7 +173,7 @@ static inline void subframe_tx(out buffered port:32 p, unsigned sample_in, int c
     output_word(p, encoded_word, divide);
 }
 
-void SpdifTransmit(out buffered port:32 p, chanend c_tx0, const uint32_t ctrl_left[6], const uint32_t ctrl_right[6], int divide)
+void SpdifTransmit(out buffered port:32 p, chanend c_tx0, const uint32_t ctrl_left[6], const uint32_t ctrl_right[6], int divide, unsigned sample_mask)
 {
     unsigned sample_l, sample_r;
 
@@ -212,17 +212,17 @@ void SpdifTransmit(out buffered port:32 p, chanend c_tx0, const uint32_t ctrl_le
             /* Sub-frame 1 */
             if(i == 0)
             {
-                subframe_tx(p, sample_l, controlLeft, SPDIF_PREAMBLE_Z, divide);  // Block start & Sub-frame 1
+                subframe_tx(p, sample_l, controlLeft, SPDIF_PREAMBLE_Z, divide, sample_mask);  // Block start & Sub-frame 1
             }
             else
             {
-                subframe_tx(p, sample_l, controlLeft, SPDIF_PREAMBLE_X, divide); // Sub-frame 1
+                subframe_tx(p, sample_l, controlLeft, SPDIF_PREAMBLE_X, divide, sample_mask); // Sub-frame 1
             }
 
             controlLeft >>=1;
 
             /* Sub-frame 2 */
-            subframe_tx(p, sample_r, controlRight, SPDIF_PREAMBLE_Y, divide);
+            subframe_tx(p, sample_r, controlRight, SPDIF_PREAMBLE_Y, divide, sample_mask);
 
             controlRight >>=1;
 
@@ -257,8 +257,8 @@ void SpdifTransmitError(chanend c_in)
     }
 }
 
-unsigned build_pro_channel_status(uint32_t chanStat_L[6], uint32_t chanStat_R[6], uint32_t samp_freq);
-unsigned build_consumer_channel_status(uint32_t chanStat_L[6], uint32_t chanStat_R[6], uint32_t samp_freq);
+unsigned build_pro_channel_status(uint32_t chanStat_L[6], uint32_t chanStat_R[6], uint32_t samp_freq, uint32_t word_length);
+unsigned build_consumer_channel_status(uint32_t chanStat_L[6], uint32_t chanStat_R[6], uint32_t samp_freq, uint32_t word_length);
 
 /* S/PDIF transmit thread */
 void spdif_tx(buffered out port:32 p, chanend c_in)
@@ -268,6 +268,7 @@ void spdif_tx(buffered out port:32 p, chanend c_in)
     {
         uint32_t chanStat_L[6], chanStat_R[6];
         unsigned divide;
+        unsigned sample_mask;
 
         /* Check for shutdown */
         if (testct(c_in))
@@ -282,10 +283,16 @@ void spdif_tx(buffered out port:32 p, chanend c_in)
         /* Receive master clock frequency over channel (in Hz) */
         unsigned  mclkFreq = inuint(c_in);
 
+        /* Receive word length in bits over channel. Supported word lengths - [16, 20, 24]*/
+        unsigned word_length = inuint(c_in);
+
+        sample_mask = (word_length == 16) ? 0x0FFFF000 :
+                      (word_length == 20) ? 0x0FFFFF00 : 0x0FFFFFF0;
+
 #if SPDIF_TX_ENABLE_PRO_CHANNEL_STATUS
-        unsigned error = build_pro_channel_status(chanStat_L, chanStat_R, samFreq);
+        unsigned error = build_pro_channel_status(chanStat_L, chanStat_R, samFreq, word_length);
 #else
-        unsigned error = build_consumer_channel_status(chanStat_L, chanStat_R, samFreq);
+        unsigned error = build_consumer_channel_status(chanStat_L, chanStat_R, samFreq, word_length);
 #endif
 
         /* Calculate required divide */
@@ -297,7 +304,7 @@ void spdif_tx(buffered out port:32 p, chanend c_in)
         if(error)
             SpdifTransmitError(c_in);
         else
-            SpdifTransmit(p, c_in, chanStat_L, chanStat_R, divide);
+            SpdifTransmit(p, c_in, chanStat_L, chanStat_R, divide, sample_mask);
     }
 }
 
@@ -309,11 +316,13 @@ void spdif_tx_output(chanend c, unsigned l, unsigned r)
 
 void spdif_tx_reconfigure_sample_rate(chanend c,
                                       unsigned sample_frequency,
-                                      unsigned master_clock_frequency)
+                                      unsigned master_clock_frequency,
+                                      unsigned word_length)
 {
     outct(c, XS1_CT_END);
     outuint(c, sample_frequency);
     outuint(c, master_clock_frequency);
+    outuint(c, word_length);
 }
 
 void spdif_tx_shutdown(chanend c)

@@ -22,7 +22,7 @@ uint8_t calc_spdif_pro_crc(uint32_t len, const uint8_t *buf, uint8_t init,
     return (uint8_t)xmos_crc;
 }
 
-unsigned build_pro_channel_status(uint32_t chanStat_L[6], uint32_t chanStat_R[6], uint32_t samp_freq)
+unsigned build_pro_channel_status(uint32_t chanStat_L[6], uint32_t chanStat_R[6], uint32_t samp_freq, uint32_t word_length)
 {
     uint8_t* ptr_cs_l = (uint8_t*)&chanStat_L[0];
     uint8_t* ptr_cs_r = (uint8_t*)&chanStat_R[0];
@@ -49,8 +49,8 @@ unsigned build_pro_channel_status(uint32_t chanStat_L[6], uint32_t chanStat_R[6]
     bit4-7, 0001 - user bits management, 192bit block structure, preamble Z starts block
 
     byte2
-    bit0-2, 001 - use of auxillary bits - Used for main audio. Max audio word length is 24bits
-    bit3-5, 101 - Source word length - 24 bits
+    bit0-2, 001 - use of auxiliary bits - Used for main audio. Max audio word length is 24bits, 000 - max word length 20bits, auxiliary bits not defined
+    bit3-5, 101 - Source word length - 24 bits, 100 - 16bits
     bit6-7, 00 - indication of alignment level - Not indicated
 
     byte3
@@ -71,7 +71,18 @@ unsigned build_pro_channel_status(uint32_t chanStat_L[6], uint32_t chanStat_R[6]
 
     ptr_cs_l[0] = ptr_cs_r[0] = 0x1;
     ptr_cs_l[1] = ptr_cs_r[1] = 0x88;
-    ptr_cs_l[2]= ptr_cs_r[2] = 0x2c;
+    if(word_length == 24)
+    {
+        ptr_cs_l[2]= ptr_cs_r[2] = 0x2c;
+    }
+    else if(word_length == 20)
+    {
+        ptr_cs_l[2]= ptr_cs_r[2] = 0x28;
+    }
+    else if(word_length == 16)
+    {
+        ptr_cs_l[2]= ptr_cs_r[2] = 0x08;
+    }
     ptr_cs_l[3] = 0x01;
     ptr_cs_r[3] = 0x02;
 
@@ -125,7 +136,7 @@ unsigned build_pro_channel_status(uint32_t chanStat_L[6], uint32_t chanStat_R[6]
     return 0;
 }
 
-unsigned build_consumer_channel_status(uint32_t chanStat_L[6], uint32_t chanStat_R[6], uint32_t samp_freq)
+unsigned build_consumer_channel_status(uint32_t chanStat_L[6], uint32_t chanStat_R[6], uint32_t samp_freq, uint32_t word_length)
 {
     // IEC 60958-3
     /* Defines for building channel status block for consumer use  */
@@ -150,8 +161,8 @@ unsigned build_consumer_channel_status(uint32_t chanStat_L[6], uint32_t chanStat
     bit0-3, varible based on sampling freq.
 
     byte4
-    bit0, 1 - Maximum audio sample word length is 24 bits
-    bit1-3, 101 - Sample word length, 24 bits
+    bit0, 1 - Maximum audio sample word length is 24 bits, 0 - 20 bits (auxillary bits unused)
+    bit1-3, 101 - Sample word length, 24 bits, 100 - 16 bits
 
     CHAN_STAT_R is the same as CHAN_STAT_L except for byte2, bits4-7 indicating 0100 - B (right in 2 channel format)
 
@@ -168,20 +179,25 @@ unsigned build_consumer_channel_status(uint32_t chanStat_L[6], uint32_t chanStat
     #define CHAN_STAT_176400   (0x0C000000)
     #define CHAN_STAT_192000   (0x0E000000)
 
-    #define CHAN_STAT_WORD_2   (0x0000000B)
-
     memset(chanStat_L, 0, 6*sizeof(chanStat_L[0]));
     memset(chanStat_R, 0, 6*sizeof(chanStat_R[0]));
-    chanStat_L[0] = CHAN_STAT_L;
-    chanStat_R[0] = CHAN_STAT_R;
 
-    chanStat_L[1] = CHAN_STAT_WORD_2;
-    chanStat_R[1] = CHAN_STAT_WORD_2;
-    for(int i=2; i<6; i++)
+    if(word_length == 24)
     {
-        chanStat_L[i] = 0x0;
-        chanStat_R[i] = 0x0;
+        chanStat_L[1] = 0x0000000B;
+        chanStat_R[1] = 0x0000000B;
     }
+    else if(word_length == 20)
+    {
+        chanStat_L[1] = 0x0000000A;
+        chanStat_R[1] = 0x0000000A;
+    }
+    else if(word_length == 16)
+    {
+        chanStat_L[1] = 0x00000002;
+        chanStat_R[1] = 0x00000002;
+    }
+
     /* Create channel status words based on sample freq */
     switch(samp_freq)
     {

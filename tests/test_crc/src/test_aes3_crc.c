@@ -21,7 +21,7 @@ uint32_t crc8_ref(uint32_t len, const uint8_t *buf, uint8_t init,
 
 int main(void)
 {
-    // This test checks the AES3 CRC calculation.s
+    // This test checks the AES3 CRC calculation
     // Test cases are from https://tech.ebu.ch/docs/tech/tech3250.pdf, appendix 1, which has 2 examples of channel
     // status data and the corresponding expected CRC values.
     uint32_t test[6];

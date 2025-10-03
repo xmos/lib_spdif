@@ -22,6 +22,7 @@ on tile[1]: clock                   clk_audio       = XS1_CLKBLK_1;
 
 #define SAMPLE_FREQUENCY_HZ 96000
 #define MCLK_FREQUENCY_48  24576000
+#define WORD_LENGTH (24)
 
 #define SINE_TABLE_SIZE 100
 const int32_t sine_table[SINE_TABLE_SIZE] =
@@ -52,7 +53,7 @@ void generate_samples(chanend c) {
     int i = 0;
     spdif_tx_reconfigure_sample_rate(c,
                                      SAMPLE_FREQUENCY_HZ,
-                                     MCLK_FREQUENCY_48);
+                                     MCLK_FREQUENCY_48, WORD_LENGTH);
     while(1) {
        // Generate a sine wave
        int sample = sine_table[i];

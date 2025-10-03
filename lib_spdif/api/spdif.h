@@ -171,10 +171,13 @@ void spdif_tx(out_buffered_port_32_t p_spdif, chanend c);
  * \param sample_frequency        The required new sample frequency in Hz.
  * \param master_clock_frequency  The master_clock_frequency that the S/PDIF
  *                                transmitter is using
+ * \param word_length             word length in bits of the transmitted samples.
+ *                                Supported values - 16, 20 or 24bits
  */
 void spdif_tx_reconfigure_sample_rate(chanend c_spdif_tx,
                                       unsigned sample_frequency,
-                                      unsigned master_clock_frequency);
+                                      unsigned master_clock_frequency,
+                                      unsigned word_length);
 
 /** Output a sample pair to the S/PDIF transmitter component.
  *
