@@ -150,11 +150,11 @@ void spdif_tx_port_config(out_buffered_port_32_t p, clock clk, in_port_t p_mclk,
  *
  * This function provides an S/PDIF transmit component.
  * It is capable of 44100, 48000, 88200, 96000, and 192000 Hz sample
- * rates.
+ * rates and 16, 20 or 24 bits of sample word lengths.
  *
- * The sample rate can be dynamically changes during the operation
+ * The sample rate or word length can be dynamically changed during the operation
  * of the component. Note that the first API call to this component
- * should be to reconfigure the sample rate (using the
+ * should be to reconfigure the sample rate and the word length (using the
  * spdif_tx_reconfigure_sample_rate() function).
  *
  * \param p_spdif  The output port to transmit to
@@ -162,10 +162,10 @@ void spdif_tx_port_config(out_buffered_port_32_t p, clock clk, in_port_t p_mclk,
  */
 void spdif_tx(out_buffered_port_32_t p_spdif, chanend c);
 
-/** Reconfigure the S/PDIF tx component to a new sample rate.
+/** Reconfigure the S/PDIF tx component to a new sample rate or sample word length.
  *
  * This function instructs the S/PDIF transmitter component to change
- * sample rate.
+ * sample rate or the sample word length.
  *
  * \param c_spdif_tx              chanend connected to the S/PDIF transmitter
  * \param sample_frequency        The required new sample frequency in Hz.

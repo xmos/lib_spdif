@@ -1,13 +1,17 @@
 lib_spdif change log
 ====================
 
-UNRELEASED
-----------
+7.0.0
+-----
 
-  * ADDED: Support for transmitting IEC 60958-4 professional applications channel status block
-  * ADDED: Support for transmitting 16, 20 or 24 bit data with the word length being configurable at run-time
-  * CHANGED: Pre-fill the SPDIF TX port buffers before starting actual data transfer
-  * CHANGED: Channel protocol when communicating with the transmitter to include audio sample word length
+  * ADDED: Support for transmitting IEC 60958-4 professional applications
+    channel status block
+  * ADDED: Support for transmitting 16, 20 or 24 bit data with the word length
+    being configurable at run-time
+  * CHANGED: Pre-fill the SPDIF TX port buffers before starting actual data
+    transfer
+  * CHANGED: Channel protocol when communicating with the transmitter to include
+    audio sample word length
 
 6.2.1
 -----

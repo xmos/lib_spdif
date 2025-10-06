@@ -264,6 +264,7 @@ Creating an S/PDIF transmitter instance
 S/PDIF transmitter API
 ======================
 
+.. doxygendefine:: SPDIF_TX_ENABLE_PRO_CHANNEL_STATUS
 .. doxygenfunction:: spdif_tx_reconfigure_sample_rate
 .. doxygenfunction:: spdif_tx_output
 .. doxygenfunction:: spdif_tx_shutdown

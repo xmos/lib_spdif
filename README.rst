@@ -5,7 +5,7 @@ lib_spdif: S/PDIF library
 #########################
 
 :vendor: XMOS
-:version: 6.2.1
+:version: 7.0.0
 :scope: General Use
 :description: S/PDIF transmitter and receiver
 :category: Audio
@@ -34,6 +34,7 @@ Features
 * Supports stereo S/PDIF receive for sample rates up to 192KHz
 * Supports stereo S/PDIF transmit for sample rates up to 192KHz
 * Fully compliant to the IEC60958 specification. Supports professional (i.e. AES3) and consumer variants
+* Supports audio sample word lengths of 16, 20 or 24 bits
 
 ************
 Known issues
@@ -51,7 +52,7 @@ Development repo
 Required tools
 **************
 
-* XMOS XTC Tools: 15.3.0
+* XMOS XTC Tools: 15.3.1
 
 *********************************
 Required libraries (dependencies)
