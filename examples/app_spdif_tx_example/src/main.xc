@@ -20,6 +20,7 @@ on tile[1]: out buffered    port:32 p_spdif_tx      = XS1_PORT_1A;
 on tile[1]: in              port    p_mclk_in       = XS1_PORT_1D;
 on tile[1]: clock                   clk_audio       = XS1_CLKBLK_1;
 
+#define USE_DEDICATED_CLKBLK 0 // This allows larger ratios of MCLK_FREQ/SAMPLE_FREQ (>768) but requires a dedicated clock block.
 #define SAMPLE_FREQUENCY_HZ 96000
 #define MCLK_FREQUENCY_48  24576000
 #define WORD_LENGTH (24)
@@ -95,7 +96,11 @@ int main(void) {
         on tile[1]: {
             spdif_tx_port_config(p_spdif_tx, clk_audio, p_mclk_in, 7);
             start_clock(clk_audio);
+#if USE_DEDICATED_CLKBLK
+            spdif_tx_lld(p_spdif_tx, c_spdif, clk_audio);
+#else
             spdif_tx(p_spdif_tx, c_spdif);
+#endif
         }
         on tile[1]: generate_samples(c_spdif);
     }

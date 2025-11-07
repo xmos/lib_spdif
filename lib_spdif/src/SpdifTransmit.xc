@@ -263,6 +263,11 @@ unsigned build_consumer_channel_status(uint32_t chanStat_L[6], uint32_t chanStat
 /* S/PDIF transmit thread */
 void spdif_tx(buffered out port:32 p, chanend c_in)
 {
+    spdif_tx_lld(p, c_in, NULL);
+}
+
+void spdif_tx_lld(buffered out port:32 p, chanend c_in, clock ?clk)
+{
     chkct(c_in, XS1_CT_END);
     while(1)
     {
@@ -297,6 +302,15 @@ void spdif_tx(buffered out port:32 p, chanend c_in)
 
         /* Calculate required divide */
         divide = mclkFreq / (samFreq * 2 * 32 * 2);
+        
+        if (!isnull(clk))
+        {
+            /* Set clock divider in clock block */
+            stop_clock(clk);
+            set_clock_div(clk, (divide>>1));
+            start_clock(clk);
+            divide = 1; /* Don't do clock division in software */
+        }
 
         if((divide != 1) && (divide != 2) && (divide != 4) && (divide != 6))
             error++;
