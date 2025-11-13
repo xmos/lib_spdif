@@ -65,10 +65,11 @@ int spdif_rx_decode(streaming chanend c, buffered in port:32 p, unsigned sample_
     unsigned z_pre_sample = 0;
     unsigned unlock_cnt = 0;
     unsigned t;
-    unsigned adder, mask, z_pre_len;
+    unsigned adder, mask;
     unsigned dehash[16];
     unsigned pre_count = 0;
     unsigned char tmp; // used in exit function
+    int z_pre_len;
 
     if ((sample_rate % 11025) == 0) // 44.1 based rates
     {
@@ -159,7 +160,7 @@ int spdif_rx_decode(streaming chanend c, buffered in port:32 p, unsigned sample_
             z_pre_sample = sample;
             // Measure the position of reference edge and apply correction to PLL.
             unsigned ref_tran = cls(sample<<9);
-            int raw_err = error_lookup[ref_tran];
+            raw_err = error_lookup[ref_tran];
             if (ref_tran > 5)
                 unlock_cnt++;
             adder -= raw_err;
@@ -201,9 +202,9 @@ int spdif_rx_decode(streaming chanend c, buffered in port:32 p, unsigned sample_
 // This function checks the input signal is approximately the correct sample rate for the given mode/clock setting.
 int check_clock_div(buffered in port:32 p)
 {
-    unsigned sample;
-    unsigned max_pulse = 0;
-    unsigned min_pulse = 1000;
+    int sample;
+    int max_pulse = 0;
+    int min_pulse = 1000;
 
     // Flush the port
     p :> void;

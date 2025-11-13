@@ -8,12 +8,14 @@
 uint8_t calc_spdif_pro_crc(uint32_t len, const uint8_t *buf, uint8_t init,
                     uint8_t final_xor, uint8_t poly)
 {
+    (void) final_xor;
+
     uint8_t tmp = (init ^ buf[0]);
     uint32_t xmos_crc = 0;
     uint32_t shifted;
     asm volatile("crc8 %0, %1, %3, %4" : "=r"(xmos_crc), "=r"(shifted) : "0"(xmos_crc), "r"(tmp), "r"(poly));
 
-    for(int i=1;i<len;i++){
+    for(uint32_t i=1;i<len;i++){
         // consume one byte at a time
         asm volatile("crc8 %0, %1, %3, %4" : "=r"(xmos_crc), "=r"(shifted) : "0"(xmos_crc), "r"(buf[i]), "r"(poly));
     }

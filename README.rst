@@ -9,7 +9,7 @@ lib_spdif: S/PDIF library
 :scope: General Use
 :description: S/PDIF transmitter and receiver
 :category: Audio
-:keywords: S/PDIF
+:keywords: Serial interface
 :devices: xcore.ai, xcore-200
 
 *******
