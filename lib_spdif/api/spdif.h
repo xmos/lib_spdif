@@ -199,5 +199,25 @@ void spdif_tx_output(chanend c_spdif_tx, unsigned lsample, unsigned rsample);
  */
 void spdif_tx_shutdown(chanend c);
 
+/** S/PDIF transmit function low level.
+ *
+ * This function provides an S/PDIF transmit component.
+ * It is capable of 44100, 48000, 88200, 96000, and 192000 Hz sample
+ * rates and 16, 20 or 24 bits of sample word lengths.
+ *
+ * The sample rate or word length can be dynamically changed during the operation
+ * of the component. Note that the first API call to this component
+ * should be to reconfigure the sample rate and the word length (using the
+ * spdif_tx_reconfigure_sample_rate() function).
+ *
+ * Setting the clk to NULL will force clock division in software (allowing
+ * sharing of clock block) otherwise division is carried out in the clock
+ * block.
+ *
+ * \param p_spdif  The output port to transmit to
+ * \param c        chanend to connect to the application
+ * \param clk      the clock that the S/PDIF component will use
+ */
+void spdif_tx_lld(buffered out port:32 p, chanend c, clock ?clk);
 
 #endif /* _SPDIF_H_ */
