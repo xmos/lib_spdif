@@ -1,6 +1,11 @@
 lib_spdif change log
 ====================
 
+UNRELEASED
+----------
+
+  * CHANGED: Fixed compiler warnings (when -Wextra used)
+
 7.0.0
 -----
 
